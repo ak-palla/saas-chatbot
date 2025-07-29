@@ -17,7 +17,8 @@ class Settings(BaseSettings):
     # AI Services
     GROQ_API_KEY: str
     DEEPGRAM_API_KEY: str
-    OPENAI_API_KEY: str = ""  # Optional
+    OPENAI_API_KEY: str = ""  # Optional, deprecated in favor of HF
+    HUGGINGFACE_API_TOKEN: str = ""  # Hugging Face API token
     
     # Redis
     REDIS_URL: str = "redis://localhost:6379"
@@ -32,8 +33,9 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
-    # Google Drive
-    GOOGLE_DRIVE_CREDENTIALS_PATH: str
+    # Google Drive (optional)
+    GOOGLE_DRIVE_CREDENTIALS_PATH: str = ""
+    GOOGLE_DRIVE_FOLDER_ID: str = ""  # Optional: specific folder for uploads
     
     model_config = {"env_file": ".env"}
 

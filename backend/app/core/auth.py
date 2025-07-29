@@ -67,3 +67,24 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate user",
         )
+
+
+async def get_current_user_websocket(token: str) -> dict:
+    """
+    Get current user for WebSocket connections
+    Similar to get_current_user but works with token string directly
+    """
+    payload = verify_token(token)
+    user_id: str = payload.get("sub")
+    if user_id is None:
+        raise ValueError("Could not validate credentials")
+    
+    # Get user from Supabase
+    supabase = get_supabase()
+    try:
+        response = supabase.table("users").select("*").eq("id", user_id).execute()
+        if not response.data:
+            raise ValueError("User not found")
+        return response.data[0]
+    except Exception as e:
+        raise ValueError(f"Could not validate user: {str(e)}")
