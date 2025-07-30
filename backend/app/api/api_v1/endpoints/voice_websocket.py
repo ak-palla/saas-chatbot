@@ -9,7 +9,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPExce
 from typing import Optional
 
 from app.core.websocket_manager import websocket_manager, VoiceSession
-from app.core.auth import get_current_user_websocket
+from app.core.auth import get_current_user_websocket, get_current_user
 from app.services.voice_service import voice_service
 from app.models.voice import VoiceConfig
 

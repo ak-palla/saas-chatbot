@@ -7,11 +7,30 @@ import io
 import logging
 import tempfile
 import base64
-from typing import Optional, Tuple, Dict, Any, Union
+import os
+from typing import Optional, Tuple, Dict, Any, Union, List
 from pydub import AudioSegment
 from pydub.exceptions import CouldntDecodeError
 
 logger = logging.getLogger(__name__)
+
+# Configure pydub to use the correct FFmpeg path
+def configure_ffmpeg_path():
+    """Configure pydub to use the correct FFmpeg executable"""
+    ffmpeg_path = r"C:\Users\NJ-25\scoop\apps\ffmpeg\7.1.1\bin\ffmpeg.exe"
+    ffprobe_path = r"C:\Users\NJ-25\scoop\apps\ffmpeg\7.1.1\bin\ffprobe.exe"
+    
+    # Only configure if files exist
+    if os.path.exists(ffmpeg_path) and os.path.exists(ffprobe_path):
+        AudioSegment.converter = ffmpeg_path
+        AudioSegment.ffmpeg = ffmpeg_path
+        AudioSegment.ffprobe = ffprobe_path
+        logger.info(f"Configured pydub to use FFmpeg at: {ffmpeg_path}")
+    else:
+        logger.warning("FFmpeg not found at expected location, using system PATH")
+
+# Configure FFmpeg on module import
+configure_ffmpeg_path()
 
 
 class AudioProcessor:
