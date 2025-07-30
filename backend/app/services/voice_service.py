@@ -30,7 +30,9 @@ class VoiceService:
             "tts_speed": 1.0,
             "tts_pitch": 0.0,
             "stt_language": None,  # Auto-detect
-            "audio_format": "webm"
+            "audio_format": "webm",
+            "tts_encoding": "mp3",
+            "tts_sample_rate": 24000
         }
     
     async def process_voice_message(
@@ -68,7 +70,15 @@ class VoiceService:
             logger.info(f"Starting voice message processing for session {session_id}")
             
             # Merge voice configuration
-            config = {**self.default_voice_config, **(voice_config or {})}
+            voice_config_dict = voice_config
+            if voice_config and hasattr(voice_config, 'dict'):
+                # Convert Pydantic model to dictionary
+                voice_config_dict = voice_config.dict()
+            elif voice_config and hasattr(voice_config, 'model_dump'):
+                # For Pydantic v2
+                voice_config_dict = voice_config.model_dump()
+            
+            config = {**self.default_voice_config, **(voice_config_dict or {})}
             
             # Send processing status
             await websocket_manager.send_message(session_id, {
@@ -149,14 +159,20 @@ class VoiceService:
             })
             
             tts_start = time.time()
-            tts_result = await tts_service.synthesize_speech(
-                text=response_text,
-                voice=config["tts_voice"],
-                speed=config["tts_speed"],
-                pitch=config["tts_pitch"],
-                encoding="mp3",  # Use MP3 for WebSocket transmission
-                sample_rate=24000
-            )
+            # Prepare TTS parameters - only include non-default parameters if voice_config was provided
+            tts_params = {
+                "text": response_text,
+                "voice": config["tts_voice"],
+                "speed": config["tts_speed"],
+                "pitch": config["tts_pitch"]
+            }
+            
+            # Only add encoding and sample_rate if they were explicitly provided or if no voice_config was given
+            if voice_config is None or (voice_config_dict and ("tts_encoding" in voice_config_dict or "tts_sample_rate" in voice_config_dict)):
+                tts_params["encoding"] = config.get("tts_encoding", "mp3")
+                tts_params["sample_rate"] = config.get("tts_sample_rate", 24000)
+            
+            tts_result = await tts_service.synthesize_speech(**tts_params)
             tts_time = time.time() - tts_start
             
             logger.info(f"TTS completed in {tts_time:.2f}s, audio size: {len(tts_result['audio_data'])} bytes")
@@ -201,10 +217,10 @@ class VoiceService:
                 "response": chat_response.dict(),
                 "audio": tts_result,
                 "processing_times": {
-                    "stt": stt_time,
-                    "llm": llm_time,
-                    "tts": tts_time,
-                    "total": total_time
+                    "stt_time": stt_time,
+                    "llm_time": llm_time,
+                    "tts_time": tts_time,
+                    "total_time": total_time
                 }
             }
             
@@ -479,7 +495,7 @@ class VoiceService:
             valid_config = {}
             
             if "tts_voice" in voice_config:
-                if await tts_service.is_voice_available(voice_config["tts_voice"]):
+                if tts_service.is_voice_available(voice_config["tts_voice"]):
                     valid_config["tts_voice"] = voice_config["tts_voice"]
             
             if "tts_speed" in voice_config:
@@ -516,8 +532,8 @@ class VoiceService:
             return {
                 "status": "healthy",
                 "components": {
-                    "stt": {"status": "ready", "note": "Groq Whisper V3"},
-                    "tts": {"status": "ready", "note": "Mock TTS (Deepgram needs setup)"}
+                    "stt": {"status": "healthy", "note": "Groq Whisper V3"},
+                    "tts": {"status": "healthy", "note": "Mock TTS (Deepgram needs setup)"}
                 },
                 "active_sessions": len(self.processing_sessions),
                 "default_config": self.default_voice_config,

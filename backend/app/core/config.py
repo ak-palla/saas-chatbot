@@ -20,6 +20,16 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""  # Optional, deprecated in favor of HF
     HUGGINGFACE_API_TOKEN: str = ""  # Hugging Face API token
     
+    # TTS Configuration
+    TTS_MAX_RETRIES: int = 3
+    TTS_RETRY_DELAY: float = 1.0  # seconds
+    TTS_TIMEOUT: int = 30  # seconds
+    
+    # STT Configuration  
+    STT_MAX_RETRIES: int = 3
+    STT_RETRY_DELAY: float = 1.0
+    STT_TIMEOUT: int = 60
+    
     # Redis
     REDIS_URL: str = "redis://localhost:6379"
     

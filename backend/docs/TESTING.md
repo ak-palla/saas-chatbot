@@ -1,34 +1,32 @@
-# Phase 1 Testing Guide
+# Comprehensive Testing Guide
 
 ## Overview
-This directory contains comprehensive test files to validate your Phase 1 implementation of the Chatbot SaaS platform.
+This guide covers the complete testing suite for the Chatbot SaaS platform, including all implemented phases (1-3) with text and voice capabilities.
 
-**📁 All test files are now organized in the `tests/` directory.**
+**📁 All test files are organized in the `tests/` directory.**
 
-## Test Files
+## 🧪 Test Structure
 
-### 1. `tests/quick_test.py` - Basic Validation
-- Tests server connectivity
-- Validates core endpoints
-- Checks authentication protection
+### Development Tools
+- **`scripts/dev-tools.py`** - Comprehensive development utility
+- **`dev.bat`** - Windows wrapper for dev tools
+
+### Unit Tests (`tests/unit/`)
+- **`test_phase1.py`** - Core infrastructure tests
+- Basic service validation
+- **Run time**: ~10 seconds
+
+### Integration Tests (`tests/integration/`)
+- **`test_phase1_complete.py`** - Phase 1 complete validation
+- **`test_phase2_complete.py`** - Phase 2 text chat validation  
+- **`test_phase3_voice.py`** - Phase 3 voice functionality tests
+- **`test_phase3_comprehensive_edge_cases.py`** - Advanced voice scenarios
+- **`test_phase3_complete_validation.py`** - Master validation runner
+- **Run time**: ~60-120 seconds
+
+### Utility Tests (`tests/utils/`)
+- **`quick_test.py`** - Basic connectivity validation
 - **Run time**: ~5 seconds
-
-### 2. `tests/test_phase1.py` - Comprehensive Testing
-- Full end-to-end testing
-- Creates test user and data
-- Tests all CRUD operations
-- Validates authentication flow
-- Cleans up test data
-- **Run time**: ~30 seconds
-
-### 3. `tests/test_diagnostics.py` - Diagnostic Tool
-- Identifies common issues
-- Provides troubleshooting guidance
-- **Run time**: ~3 seconds
-
-### 4. `run_tests.bat` - Test Runner (Windows)
-- Runs both quick and comprehensive tests
-- Easy to use batch file
 
 ## Prerequisites
 
@@ -44,63 +42,121 @@ This directory contains comprehensive test files to validate your Phase 1 implem
 
 3. **Database Setup**: For full testing, your Supabase database should be configured with the schema from `database.sql`
 
-## Running Tests
+## 🚀 Running Tests
 
-### Method 1: Use the Batch File (Windows)
-```cmd
-run_tests.bat
-```
-
-### Method 2: Manual Execution
+### Method 1: Development Tools (Recommended)
 ```bash
-# Diagnostic tool (run first to identify issues)
-python tests/test_diagnostics.py
+# Activate virtual environment first
+venv\Scripts\activate  # Windows
+source venv/bin/activate  # Linux/Mac
 
-# Quick test (basic validation)
-python tests/quick_test.py
+# Run all tests
+python scripts/dev-tools.py test
 
-# Comprehensive test (full functionality)
-python tests/test_phase1.py
+# Run specific test types
+python scripts/dev-tools.py test unit         # Unit tests only
+python scripts/dev-tools.py test integration # Integration tests only
+python scripts/dev-tools.py test phase3      # Voice functionality tests
+python scripts/dev-tools.py test voice       # Same as phase3
+
+# Windows users can use the wrapper
+dev test                    # All tests
+dev test phase3            # Voice tests only
 ```
 
-## Test Coverage
+### Method 2: Pytest Directly
+```bash
+# All tests
+pytest tests/ -v
 
-### ✅ What Gets Tested
+# Specific test categories
+pytest tests/unit/ -v
+pytest tests/integration/ -v
+pytest tests/integration/test_phase3_voice.py -v
 
+# With coverage
+pytest tests/ --cov=app --cov-report=html
+
+# Parallel execution (faster)
+pytest tests/ -n auto
+```
+
+### Method 3: Individual Test Files
+```bash
+# Quick connectivity test
+python tests/utils/quick_test.py
+
+# Specific phase validation
+python scripts/utilities/validate_phase3.py
+
+# Advanced voice testing
+python -m pytest tests/integration/test_phase3_comprehensive_edge_cases.py -v
+```
+
+## 📊 Test Coverage
+
+### ✅ Phase 1: Core Infrastructure
 #### API Endpoints
 - `GET /` - Root endpoint
 - `GET /api/v1/health/` - Health check
 - `GET /api/v1/health/db` - Database health
-- `POST /api/v1/auth/register` - User registration
-- `POST /api/v1/auth/login` - User login
-- `GET /api/v1/auth/me` - Current user info
-- `GET /api/v1/chatbots/` - List chatbots
-- `POST /api/v1/chatbots/` - Create chatbot
-- `GET /api/v1/chatbots/{id}` - Get specific chatbot
-- `PUT /api/v1/chatbots/{id}` - Update chatbot
-- `DELETE /api/v1/chatbots/{id}` - Delete chatbot
-- `POST /api/v1/conversations/` - Create conversation
-- `GET /api/v1/conversations/chatbot/{id}` - Get conversations
-- `DELETE /api/v1/conversations/{id}` - Delete conversation
+- Authentication endpoints (register, login, user info)
+- Chatbot CRUD operations
+- Conversation management
 
 #### Functionality
 - User registration and authentication
 - JWT token generation and validation
-- CRUD operations for chatbots
-- CRUD operations for conversations
-- Database connectivity
-- Authentication protection
-- Error handling
-- Data cleanup
+- Database connectivity and operations
+- Error handling and data cleanup
 
-### ⚠️ What's NOT Tested (Phase 2+)
-- Chat completion endpoints
-- Document upload and processing
-- Vector embeddings
-- RAG functionality
-- Voice processing (STT/TTS)
-- Payment processing
-- Rate limiting (when Redis is unavailable)
+### ✅ Phase 2: Text Chat Service
+#### API Endpoints
+- `POST /api/v1/chat` - Text chat completion
+- `POST /api/v1/documents/upload` - Document processing
+- `GET /api/v1/documents/` - Document management
+
+#### Functionality
+- RAG pipeline (Retrieve-Augment-Generate)
+- Document ingestion and vectorization
+- Embeddings generation (Groq + OpenAI fallback)
+- LangChain agent with tool calling
+- Vector similarity search
+
+### ✅ Phase 3: Voice Chat Service
+#### API Endpoints
+- `POST /api/v1/voice/chat` - Complete voice pipeline
+- `POST /api/v1/voice/transcribe` - Speech-to-text only
+- `POST /api/v1/voice/synthesize` - Text-to-speech only
+- `WS /api/v1/voice/ws/{session_id}` - WebSocket voice communication
+- `GET /api/v1/voice/health` - Voice service health
+
+#### Voice Functionality
+- **STT (Speech-to-Text)**: Groq Whisper V3 integration
+- **TTS (Text-to-Speech)**: Deepgram voice synthesis
+- **Audio Processing**: Format conversion (WAV, MP3, OGG, WebM)
+- **WebSocket Communication**: Real-time voice chat
+- **Voice Configuration**: Voice selection, speed, pitch control
+- **Session Management**: Multi-user voice session handling
+- **Audio Validation**: Security and format validation
+- **Performance Testing**: Load testing and optimization
+- **Error Handling**: Graceful fallbacks and recovery
+
+#### Advanced Voice Testing
+- **Edge Cases**: Malformed audio, oversized files, network issues
+- **Security**: Malicious file detection, input validation
+- **Performance**: Concurrent sessions, large file processing
+- **Integration**: Complete STT → LLM → TTS pipeline
+- **WebSocket Lifecycle**: Connection, disconnection, error recovery
+- **Audio Quality**: Compression ratios, format compatibility
+
+### ⚠️ What's NOT Yet Tested (Future Phases)
+- Frontend dashboard functionality
+- Embeddable widget performance
+- Payment processing and billing
+- Advanced rate limiting with Redis
+- Production deployment scenarios
+- Cross-browser compatibility
 
 ## Expected Results
 

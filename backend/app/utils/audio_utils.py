@@ -124,7 +124,7 @@ class AudioProcessor:
                 "frame_count": audio.frame_count(),
                 "sample_width": audio.sample_width,
                 "file_size": len(audio_data),
-                "bitrate": self._estimate_bitrate(len(audio_data), duration_seconds)
+                "bit_rate": self._estimate_bitrate(len(audio_data), duration_seconds)
             }
             
             logger.debug(f"Audio validation successful: {metadata}")
@@ -494,6 +494,125 @@ class AudioProcessor:
     def get_supported_formats(self, for_output: bool = False) -> List[str]:
         """Get list of supported formats"""
         return (self.supported_output_formats if for_output else self.supported_input_formats).copy()
+    
+    def analyze_audio_quality(self, audio_data: bytes, format_hint: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Analyze audio quality metrics
+        
+        Args:
+            audio_data: Audio bytes
+            format_hint: Format hint
+            
+        Returns:
+            Quality analysis dictionary
+        """
+        try:
+            validation = self.validate_audio(audio_data, format_hint)
+            if not validation["valid"]:
+                return validation
+            
+            audio = AudioSegment.from_file(
+                io.BytesIO(audio_data), 
+                format=validation.get("format", format_hint)
+            )
+            
+            # Calculate quality metrics
+            rms = audio.rms
+            max_amplitude = audio.max
+            silence_ratio = self._calculate_silence_ratio(audio)
+            
+            # Estimate SNR (Signal-to-Noise Ratio) - simplified
+            signal_power = rms ** 2 if rms > 0 else 1
+            noise_floor = max_amplitude * 0.01  # Assume 1% of max is noise
+            snr_estimate = 10 * (signal_power / (noise_floor ** 2) if noise_floor > 0 else 100)
+            
+            quality_score = min(100, max(0, (snr_estimate / 10) * (1 - silence_ratio) * 100))
+            
+            # Calculate clarity score based on dynamic range and SNR
+            clarity_score = min(100, max(0, (max_amplitude - rms) / 1000 * 100 if max_amplitude > rms else 0))
+            
+            # Generate recommendations based on analysis
+            recommendations = []
+            if quality_score < 50:
+                recommendations.append("Consider using a better microphone")
+            if silence_ratio > 0.8:
+                recommendations.append("Audio appears to be mostly silent")
+            if rms < 100:
+                recommendations.append("Audio level is very low, consider increasing volume")
+            if clarity_score < 30:
+                recommendations.append("Audio clarity could be improved")
+            if not recommendations:
+                recommendations.append("Audio quality is acceptable for speech processing")
+            
+            return {
+                "valid": True,
+                "rms_level": rms,
+                "max_amplitude": max_amplitude,
+                "dynamic_range": max_amplitude - rms if max_amplitude > rms else 0,
+                "silence_ratio": silence_ratio,
+                "estimated_snr": snr_estimate,
+                "noise_level": noise_floor,
+                "clarity": clarity_score,
+                "quality_score": quality_score,
+                "recommendations": recommendations,
+                "is_high_quality": quality_score > 70,
+                "is_speech_like": silence_ratio < 0.7 and rms > 100,
+                "recommended_for_stt": quality_score > 50 and silence_ratio < 0.8
+            }
+            
+        except Exception as e:
+            logger.error(f"Audio quality analysis failed: {e}")
+            return {"valid": False, "error": str(e)}
+    
+    def extract_metadata(self, audio_data: bytes, format_hint: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Extract comprehensive audio metadata
+        
+        Args:
+            audio_data: Audio bytes
+            format_hint: Format hint
+            
+        Returns:
+            Metadata dictionary
+        """
+        try:
+            validation = self.validate_audio(audio_data, format_hint)
+            if not validation["valid"]:
+                return validation
+            
+            audio = AudioSegment.from_file(
+                io.BytesIO(audio_data), 
+                format=validation.get("format", format_hint)
+            )
+            
+            # Extract comprehensive metadata
+            metadata = {
+                "valid": True,
+                "format": validation.get("format", format_hint),
+                "file_size": len(audio_data),
+                "duration": len(audio) / 1000.0,
+                "channels": audio.channels,
+                "sample_rate": audio.frame_rate,
+                "sample_width": audio.sample_width,
+                "frame_count": audio.frame_count(),
+                "bit_rate": self._estimate_bitrate(len(audio_data), len(audio) / 1000.0),
+                "encoding": "PCM" if format_hint == "wav" else "Compressed",
+                "channel_layout": "mono" if audio.channels == 1 else "stereo" if audio.channels == 2 else f"{audio.channels}ch",
+                "bit_depth": audio.sample_width * 8,
+                "is_lossless": format_hint in ["wav", "flac"],
+                "estimated_compression_ratio": 1.0 if format_hint == "wav" else 0.1,  # Rough estimate
+                "created_at": None,  # Would need file system metadata
+                "artist": None,      # Would need ID3 tags
+                "title": None,       # Would need ID3 tags
+                "album": None,       # Would need ID3 tags
+                "codec": format_hint.upper() if format_hint else "UNKNOWN"
+            }
+            
+            return metadata
+            
+        except Exception as e:
+            logger.error(f"Metadata extraction failed: {e}")
+            return {"valid": False, "error": str(e)}
 
 
 # Global audio processor instance

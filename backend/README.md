@@ -2,11 +2,11 @@
 
 > **A powerful, scalable backend for embeddable chatbot services with RAG capabilities**
 
-[![Phase 2 Complete](https://img.shields.io/badge/Phase%202-Complete-brightgreen)]()
+[![Phase 3 Complete](https://img.shields.io/badge/Phase%203-Complete-brightgreen)]()
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue)]()
 [![FastAPI](https://img.shields.io/badge/FastAPI-Latest-teal)]()
 [![Supabase](https://img.shields.io/badge/Database-Supabase-green)]()
-[![HuggingFace](https://img.shields.io/badge/Embeddings-HuggingFace-yellow)]()
+[![Voice Ready](https://img.shields.io/badge/Voice-Ready-orange)]()
 
 ## 🚀 Quick Start
 
@@ -23,11 +23,17 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # 4. Configure environment
-cp config/.env.template .env
+cp .env.example .env
 # Edit .env with your API keys
 
-# 5. Start the server
-uvicorn app.main:app --reload
+# 5. Install FFmpeg (required for voice features)
+# Windows: scoop install ffmpeg
+# Ubuntu: sudo apt install ffmpeg
+# macOS: brew install ffmpeg
+
+# 6. Validate setup and start server
+python scripts/dev-tools.py validate
+python scripts/dev-tools.py server
 ```
 
 ## 📁 Project Structure
@@ -52,37 +58,56 @@ backend/
 │   │   ├── llm_service.py          # Groq LLM integration
 │   │   └── vector_store_service.py # Vector database ops
 │   └── main.py                     # FastAPI app
-├── 📁 docs/                        # Documentation
-├── 📁 scripts/                     # Utility scripts
-│   ├── 📁 database/                # Database schemas
-│   └── 📁 utilities/               # Maintenance scripts
-├── 📁 tests/                       # Test suite
-│   ├── 📁 integration/             # Integration tests
-│   ├── 📁 unit/                    # Unit tests
-│   └── 📁 utils/                   # Test utilities
-├── 📁 config/                      # Configuration templates
-├── requirements.txt                # Dependencies
-└── .gitignore                      # Git ignore rules
+├── 📁 docs/                        # Comprehensive documentation
+│   ├── SETUP.md                    # Complete setup guide
+│   ├── API.md                      # API documentation
+│   ├── DEPLOYMENT.md               # Production deployment
+│   └── TESTING.md                  # Testing guide
+├── 📁 scripts/                     # Development utilities
+│   ├── dev-tools.py                # Main development script
+│   ├── 📁 database/                # Database schemas & migrations
+│   └── 📁 utilities/               # Testing & validation scripts
+├── 📁 tests/                       # Comprehensive test suite
+│   ├── 📁 integration/             # End-to-end tests (Phases 1-3)
+│   ├── 📁 unit/                    # Component unit tests
+│   └── 📁 utils/                   # Testing utilities
+├── .env.example                    # Environment template
+├── dev.bat                         # Windows development wrapper
+├── requirements.txt                # Python dependencies
+└── venv/                          # Virtual environment
 ```
 
 ## ✨ Features
 
-### 🎯 Phase 2 Complete (Current)
+### ✅ **Phase 1-3 Complete: Full Text & Voice Platform**
+
+#### 🎯 **Text Chat Service (Phase 2)**
 - ✅ **Document Management**: Upload PDF, TXT, DOCX, HTML, Markdown
 - ✅ **Vector Embeddings**: HuggingFace Sentence Transformers (cost-free!)
 - ✅ **Smart Search**: Vector similarity search with pgvector
 - ✅ **Chat Completion**: Groq LLM integration (multiple models)
 - ✅ **RAG Pipeline**: Retrieval-Augmented Generation ready
 - ✅ **Agent Framework**: LangChain agents with custom tools
-- ✅ **Google Drive**: Optional backup integration
+
+#### 🎙️ **Voice Chat Service (Phase 3)**
+- ✅ **Speech-to-Text**: Groq Whisper V3 integration
+- ✅ **Text-to-Speech**: Deepgram voice synthesis
+- ✅ **Audio Processing**: Multi-format support (WAV, MP3, OGG, WebM)
+- ✅ **WebSocket Support**: Real-time voice communication
+- ✅ **Voice Configuration**: Voice selection, speed, pitch control
+- ✅ **Session Management**: Multi-user voice session handling
+
+#### 🔧 **Core Infrastructure (Phase 1)**
 - ✅ **Authentication**: JWT-based auth with Supabase
 - ✅ **RESTful API**: Complete CRUD operations
+- ✅ **Database**: PostgreSQL with vector extensions
+- ✅ **Security**: Rate limiting, input validation, error handling
 
-### 🔮 Coming Soon
-- **Phase 3**: Voice chat (STT/TTS) with Deepgram
-- **Phase 4**: Widget & frontend interface
-- **Phase 5**: Advanced analytics & monitoring
-- **Phase 6**: Payment processing with Stripe
+### 🔮 **Coming Soon**
+- **Phase 4**: Frontend Dashboard & Admin Interface
+- **Phase 5**: Embeddable Widget Framework
+- **Phase 6**: Advanced Analytics & Monitoring
+- **Phase 7**: Payment Processing with Stripe
 
 ## 🛠️ Tech Stack
 
@@ -94,6 +119,10 @@ backend/
 | **Embeddings** | HuggingFace | Local, cost-free embeddings |
 | **LLM** | Groq API | Fast inference |
 | **Agent Framework** | LangChain | Tool calling & workflows |
+| **Speech-to-Text** | Groq Whisper V3 | Audio transcription |
+| **Text-to-Speech** | Deepgram | Voice synthesis |
+| **Audio Processing** | FFmpeg + pydub | Format conversion |
+| **WebSockets** | FastAPI WebSockets | Real-time communication |
 | **Authentication** | Supabase Auth | JWT-based auth |
 | **File Storage** | Google Drive (optional) | Document backup |
 | **Document Processing** | PyPDF2, python-docx, BeautifulSoup | Multi-format support |

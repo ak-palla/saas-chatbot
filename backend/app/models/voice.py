@@ -13,7 +13,7 @@ class VoiceConfig(BaseModel):
     tts_voice: str = Field(default="aura-asteria-en", description="TTS voice model")
     tts_speed: float = Field(default=1.0, ge=0.5, le=2.0, description="Speech speed multiplier")
     tts_pitch: float = Field(default=0.0, ge=-2.0, le=2.0, description="Pitch adjustment")
-    stt_language: Optional[str] = Field(default=None, description="STT language code (auto-detect if None)")
+    stt_language: Optional[str] = Field(default="en", description="STT language code (auto-detect if None)")
     audio_format: str = Field(default="webm", description="Audio format for processing")
 
 
@@ -177,8 +177,43 @@ class VoiceError(BaseModel):
     error_type: Literal["stt_error", "llm_error", "tts_error", "session_error", "config_error"]
     message: str
     details: Optional[Dict[str, Any]] = None
-    timestamp: datetime
-    session_id: Optional[str] = None
+
+
+class VoiceSession(BaseModel):
+    """Voice session model for testing"""
+    session_id: str
+    user_id: str
+    chatbot_id: str
+    status: str = "active"
+    created_at: float  # Unix timestamp
+    last_activity: float  # Unix timestamp
+    total_messages: int = 0
+    total_duration: float = 0.0
+    conversation_id: Optional[str] = None
+    
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
+
+
+class VoiceUsage(BaseModel):
+    """Voice usage tracking model"""
+    id: int
+    user_id: str
+    chatbot_id: str
+    session_id: str
+    message_type: str
+    duration: float
+    audio_format: str
+    processing_time: float
+    success: bool
+    created_at: float  # Unix timestamp
+    
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
 
 
 class VoiceUsageRecord(BaseModel):

@@ -1,103 +1,31 @@
-(venv) D:\chat_service\backend>test_all_fixed.bat
-­ƒÄÖ´©Å Testing Fixed Pydub FFmpeg Configuration
-==========================================
-­ƒôì Current directory: D:\chat_service\backend
-­ƒÉì Activating virtual environment...
+D:\chat_service\frontend>npm install @radix-ui/react-switch
+npm error Invalid Version:
+npm error A complete log of this run can be found in: C:\Users\NJ-25\AppData\Local\npm-cache\_logs\2025-07-30T10_58_22_241Z-debug-0.log
 
-­ƒöº Step 1: Configure pydub FFmpeg paths...
-🎙️ Pydub FFmpeg Configuration Tool
-==================================================
-🔧 Configuring pydub to use FFmpeg...
-✅ Found FFmpeg at: C:\Users\NJ-25\scoop\apps\ffmpeg\7.1.1\bin\ffmpeg.exe
-✅ Found FFprobe at: C:\Users\NJ-25\scoop\apps\ffmpeg\7.1.1\bin\ffprobe.exe
-D:\chat_service\backend\venv\Lib\site-packages\pydub\utils.py:170: RuntimeWarning: Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work
-  warn("Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work", RuntimeWarning)
-🔧 Configured pydub paths:
-   converter: C:\Users\NJ-25\scoop\apps\ffmpeg\7.1.1\bin\ffmpeg.exe
-   ffmpeg: C:\Users\NJ-25\scoop\apps\ffmpeg\7.1.1\bin\ffmpeg.exe
-   ffprobe: C:\Users\NJ-25\scoop\apps\ffmpeg\7.1.1\bin\ffprobe.exe
+D:\chat_service\frontend>  npm install @tanstack/react-table
+npm error Invalid Version:
+npm error A complete log of this run can be found in: C:\Users\NJ-25\AppData\Local\npm-cache\_logs\2025-07-30T10_58_27_265Z-debug-0.log
 
-🧪 Testing pydub with configured FFmpeg...
-  📀 Creating test audio...
-  🎵 Exporting to MP3...
-  ✅ MP3 export successful: 1506 bytes
+D:\chat_service\frontend>  npm install @hookform/resolvers
+npm error Invalid Version:
+npm error A complete log of this run can be found in: C:\Users\NJ-25\AppData\Local\npm-cache\_logs\2025-07-30T10_58_29_264Z-debug-0.log
 
-🎉 SUCCESS! Pydub is now working with FFmpeg!
+D:\chat_service\frontend>  npm install react-hook-form
+npm error Invalid Version:
+npm error A complete log of this run can be found in: C:\Users\NJ-25\AppData\Local\npm-cache\_logs\2025-07-30T10_58_31_231Z-debug-0.log
 
-📝 To make this permanent, add this to your app startup:
-   from pydub import AudioSegment
-   AudioSegment.converter = r'C:\Users\NJ-25\scoop\apps\ffmpeg\7.1.1\bin\ffmpeg.exe'    
-   AudioSegment.ffprobe = r'C:\Users\NJ-25\scoop\apps\ffmpeg\7.1.1\bin\ffprobe.exe'     
+D:\chat_service\frontend>  npm install zod
+npm error Invalid Version:
+npm error A complete log of this run can be found in: C:\Users\NJ-25\AppData\Local\npm-cache\_logs\2025-07-30T10_58_33_263Z-debug-0.log
 
-­ƒº¬ Step 2: Test fixed pydub configuration...
-🎙️ Fixed Pydub FFmpeg Test
-========================================
-🧪 Testing pydub with fixed FFmpeg configuration...
-D:\chat_service\backend\venv\Lib\site-packages\pydub\utils.py:170: RuntimeWarning: Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work
-  warn("Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work", RuntimeWarning)
-  📀 Creating test audio...
-  🔍 FFmpeg configuration:
-    converter: C:\Users\NJ-25\scoop\apps\ffmpeg\7.1.1\bin\ffmpeg.exe
-    ffmpeg: C:\Users\NJ-25\scoop\apps\ffmpeg\7.1.1\bin\ffmpeg.exe
-    ffprobe: C:\Users\NJ-25\scoop\apps\ffmpeg\7.1.1\bin\ffprobe.exe
-  🎵 Exporting to MP3...
-  ✅ MP3 export successful: 2551 bytes
-  🎵 Exporting to WAV...
-  ✅ WAV export successful: 22094 bytes
-✅ Pydub Fixed Configuration: PASSED
+D:\chat_service\frontend>  npm install date-fns
+npm error Invalid Version:
+npm error A complete log of this run can be found in: C:\Users\NJ-25\AppData\Local\npm-cache\_logs\2025-07-30T10_58_35_173Z-debug-0.log
 
-🧪 Testing audio processor with real conversion...
-  📀 Creating test WAV data...
-  🔍 Created test audio: 16428 bytes
-  🔍 Testing audio validation...
-  📊 Validation result: {'valid': True, 'format': 'wav', 'duration': 0.186, 'channels': 1, 'sample_rate': 44100, 'frame_count': 8192.0, 'sample_width': 2, 'file_size': 16428, 'bitrate': 706}
-  🔄 Testing format conversion (WAV → MP3)...
-  ✅ Conversion successful!
-    Input size: 16428 bytes
-    Output size: 1581 bytes
-    Compression ratio: 10.39
-✅ Audio Processor: PASSED
+D:\chat_service\frontend>  npm install axios
+npm error Invalid Version:
+npm error A complete log of this run can be found in: C:\Users\NJ-25\AppData\Local\npm-cache\_logs\2025-07-30T10_58_37_197Z-debug-0.log
 
-========================================
-📊 RESULTS: 2/2 tests passed
-🎉 SUCCESS! Pydub FFmpeg configuration is working!
-🚀 No more FFmpeg warnings in your voice system!
-
-­ƒÄ» Step 3: Run original test (should work now)...
-🎙️ Phase 3 + FFmpeg Integration Test
-==================================================
-🔧 Testing pydub + FFmpeg integration...
-D:\chat_service\backend\venv\Lib\site-packages\pydub\utils.py:170: RuntimeWarning: Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work
-  warn("Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work", RuntimeWarning)
-  📀 Creating test audio...
-  🎵 Exporting to MP3...
-  ❌ pydub + FFmpeg test failed: [WinError 2] The system cannot find the file specified 
-❌ Pydub + FFmpeg test failed
-
-🔧 Testing audio processor with FFmpeg...
-  📀 Creating test WAV data...
-  🔍 Testing audio validation...
-  ✅ Audio validation result: {'valid': False, 'error': 'Audio too short: 0.02s (min: 0.1s)'}
-  🔄 Testing audio conversion...
-  ✅ Audio conversion successful!
-      Input size: 2092 bytes
-      Output size: 539 bytes
-      Compression ratio: 3.88126159554731
-
-🔧 Testing voice services...
-Token will not been saved to git credential helper. Pass `add_to_git_credential=True` if you want to set the git credential as well.
-Token is valid (permission: fineGrained).
-Your token has been saved to C:\Users\NJ-25\.cache\huggingface\token
-Login successful
-  ✅ All voice services imported successfully
-  ✅ VoiceService has process_voice_message method
-  ✅ STTService has transcribe_audio method
-  ✅ TTSService has synthesize_speech method
-
-==================================================
-📊 RESULTS: 2/3 tests passed
-⚠️  Some tests had issues, but FFmpeg is working!
-The voice system should still function properly.
-
-Ô£¿ All tests completed!
-Press any key to continue . . .
+D:\chat_service\frontend>  npm install @radix-ui/react-progress
+npm error Invalid Version:
+npm error A complete log of this run can be found in: C:\Users\NJ-25\AppData\Local\npm-cache\_logs\2025-07-30T10_58_41_885Z-debug-0.log
