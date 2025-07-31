@@ -1,0 +1,51 @@
+{
+  "name": "@chatbot-saas/widget",
+  "version": "1.0.0",
+  "description": "Embeddable chatbot widget for Chatbot SaaS Platform",
+  "main": "dist/widget.umd.js",
+  "module": "dist/widget.es.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:watch": "vite build --watch",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint . --ext .ts,.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "chatbot",
+    "widget",
+    "embeddable",
+    "ai",
+    "saas",
+    "typescript",
+    "voice",
+    "websocket"
+  ],
+  "author": "Chatbot SaaS Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/chatbot-saas-widget.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/chatbot-saas-widget/issues"
+  },
+  "homepage": "https://github.com/your-org/chatbot-saas-widget#readme",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0",
+    "vite-plugin-dts": "^3.0.0"
+  },
+  "peerDependencies": {},
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

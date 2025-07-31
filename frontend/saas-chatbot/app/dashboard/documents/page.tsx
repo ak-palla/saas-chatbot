@@ -9,29 +9,28 @@ import { DocumentUpload } from "@/components/documents/document-upload";
 import { Plus, Upload } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useChatbots } from "@/lib/hooks/use-chatbots";
+import { Header } from "@/components/dashboard/header";
 
 export default function DocumentsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [selectedChatbot, setSelectedChatbot] = useState("");
+  const [selectedChatbot, setSelectedChatbot] = useState("all");
   const { chatbots } = useChatbots();
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Documents</h1>
-          <p className="text-muted-foreground">
-            Manage your knowledge base documents for chatbot training
-          </p>
-        </div>
-        <Button onClick={() => setShowUploadDialog(true)}>
+    <div className="space-y-8">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <Header 
+          title="Documents" 
+          description="Manage your knowledge base documents for chatbot training"
+        />
+        <Button onClick={() => setShowUploadDialog(true)} className="self-start lg:self-auto">
           <Upload className="mr-2 h-4 w-4" />
           Upload Document
         </Button>
       </div>
 
-      <div className="flex items-center space-x-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <div className="flex-1">
           <Input
             placeholder="Search documents..."
@@ -45,7 +44,7 @@ export default function DocumentsPage() {
             <SelectValue placeholder="Filter by chatbot" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Chatbots</SelectItem>
+            <SelectItem value="all">All Chatbots</SelectItem>
             {chatbots?.map((chatbot) => (
               <SelectItem key={chatbot.id} value={chatbot.id}>
                 {chatbot.name}

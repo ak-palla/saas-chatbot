@@ -1,31 +1,277 @@
-D:\chat_service\frontend>npm install @radix-ui/react-switch
-npm error Invalid Version:
-npm error A complete log of this run can be found in: C:\Users\NJ-25\AppData\Local\npm-cache\_logs\2025-07-30T10_58_22_241Z-debug-0.log
-
-D:\chat_service\frontend>  npm install @tanstack/react-table
-npm error Invalid Version:
-npm error A complete log of this run can be found in: C:\Users\NJ-25\AppData\Local\npm-cache\_logs\2025-07-30T10_58_27_265Z-debug-0.log
-
-D:\chat_service\frontend>  npm install @hookform/resolvers
-npm error Invalid Version:
-npm error A complete log of this run can be found in: C:\Users\NJ-25\AppData\Local\npm-cache\_logs\2025-07-30T10_58_29_264Z-debug-0.log
-
-D:\chat_service\frontend>  npm install react-hook-form
-npm error Invalid Version:
-npm error A complete log of this run can be found in: C:\Users\NJ-25\AppData\Local\npm-cache\_logs\2025-07-30T10_58_31_231Z-debug-0.log
-
-D:\chat_service\frontend>  npm install zod
-npm error Invalid Version:
-npm error A complete log of this run can be found in: C:\Users\NJ-25\AppData\Local\npm-cache\_logs\2025-07-30T10_58_33_263Z-debug-0.log
-
-D:\chat_service\frontend>  npm install date-fns
-npm error Invalid Version:
-npm error A complete log of this run can be found in: C:\Users\NJ-25\AppData\Local\npm-cache\_logs\2025-07-30T10_58_35_173Z-debug-0.log
-
-D:\chat_service\frontend>  npm install axios
-npm error Invalid Version:
-npm error A complete log of this run can be found in: C:\Users\NJ-25\AppData\Local\npm-cache\_logs\2025-07-30T10_58_37_197Z-debug-0.log
-
-D:\chat_service\frontend>  npm install @radix-ui/react-progress
-npm error Invalid Version:
-npm error A complete log of this run can be found in: C:\Users\NJ-25\AppData\Local\npm-cache\_logs\2025-07-30T10_58_41_885Z-debug-0.log
+react-dom-client.development.js:25581 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+turbopack-hot-reloader-common.ts:41 [Fast Refresh] rebuilding
+report-hmr-latency.ts:26 [Fast Refresh] done in 111ms
+content_script.js:2726 {side: 'content-script-global', packet: {…}}
+e.<computed> @ content_script.js:2726
+(anonymous) @ content_script.js:411
+(anonymous) @ content_script.js:2
+u @ content_script.js:2
+d @ content_script.js:411
+messageResponder @ content_script.js:411
+onMessage @ browser-polyfill.js:1079
+content_script.js:411 Uncaught (in promise) Error: No registered remote function called handleHistoryStateUpdate
+    at g.<anonymous> (content_script.js:411:3985)
+    at Generator.next (<anonymous>)
+    at content_script.js:2:21773
+    at new Promise (<anonymous>)
+    at u (content_script.js:2:21569)
+    at d (content_script.js:411:3521)
+    at messageResponder (content_script.js:411:4916)
+    at onMessage (browser-polyfill.js:1079:22)
+(anonymous) @ content_script.js:411
+(anonymous) @ content_script.js:2
+u @ content_script.js:2
+d @ content_script.js:411
+messageResponder @ content_script.js:411
+onMessage @ browser-polyfill.js:1079
+page.tsx:56 🔧 Starting chatbot creation process...
+page.tsx:57 📝 Form data: {name: 'cs-agent', description: 'assistant ', system_prompt: 'You are a helpful, friendly, and knowledgeable AI …unclear, ask for clarification before proceeding.', model: 'mixtral-8x7b-32768', is_active: true, …}
+page.tsx:79 ✅ Form validation passed
+page.tsx:83 🚀 Calling createChatbot API...
+api.ts:85 🚀 API Request: {url: 'http://localhost:8000/api/v1/chatbots', method: 'POST', headers: {…}, body: {…}}
+api.ts:94 📡 Attempt 1/4 - Fetching: http://localhost:8000/api/v1/chatbots
+new:1 Access to fetch at 'http://localhost:8000/api/v1/chatbots' from origin 'http://localhost:3001' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+api.ts:95  POST http://localhost:8000/api/v1/chatbots net::ERR_FAILED
+request @ api.ts:95
+await in request
+request @ chatbots.ts:42
+await in request
+createChatbot @ chatbots.ts:54
+useCreateChatbot.useMutation @ use-chatbots.ts:39
+fn @ mutation.ts:174
+run @ retryer.ts:153
+start @ retryer.ts:218
+execute @ mutation.ts:213
+await in execute
+mutate @ mutationObserver.ts:125
+handleSave @ page.tsx:84
+executeDispatch @ react-dom-client.development.js:16921
+runWithFiberInDEV @ react-dom-client.development.js:872
+processDispatchQueue @ react-dom-client.development.js:16971
+(anonymous) @ react-dom-client.development.js:17572
+batchedUpdates$1 @ react-dom-client.development.js:3312
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:17125
+dispatchEvent @ react-dom-client.development.js:21308
+dispatchDiscreteEvent @ react-dom-client.development.js:21276
+api.ts:137 🔄 Attempt 1 failed: TypeError: Failed to fetch
+    at ApiService.request (api.ts:95:32)
+error @ intercept-console-error.ts:44
+request @ api.ts:137
+await in request
+request @ chatbots.ts:42
+await in request
+createChatbot @ chatbots.ts:54
+useCreateChatbot.useMutation @ use-chatbots.ts:39
+fn @ mutation.ts:174
+run @ retryer.ts:153
+start @ retryer.ts:218
+execute @ mutation.ts:213
+await in execute
+mutate @ mutationObserver.ts:125
+handleSave @ page.tsx:84
+executeDispatch @ react-dom-client.development.js:16921
+runWithFiberInDEV @ react-dom-client.development.js:872
+processDispatchQueue @ react-dom-client.development.js:16971
+(anonymous) @ react-dom-client.development.js:17572
+batchedUpdates$1 @ react-dom-client.development.js:3312
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:17125
+dispatchEvent @ react-dom-client.development.js:21308
+dispatchDiscreteEvent @ react-dom-client.development.js:21276
+api.ts:147 ⏳ Waiting 1000ms before retry...
+api.ts:94 📡 Attempt 2/4 - Fetching: http://localhost:8000/api/v1/chatbots
+new:1 Access to fetch at 'http://localhost:8000/api/v1/chatbots' from origin 'http://localhost:3001' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+api.ts:95  POST http://localhost:8000/api/v1/chatbots net::ERR_FAILED
+request @ api.ts:95
+await in request
+request @ chatbots.ts:42
+await in request
+createChatbot @ chatbots.ts:54
+useCreateChatbot.useMutation @ use-chatbots.ts:39
+fn @ mutation.ts:174
+run @ retryer.ts:153
+start @ retryer.ts:218
+execute @ mutation.ts:213
+await in execute
+mutate @ mutationObserver.ts:125
+handleSave @ page.tsx:84
+executeDispatch @ react-dom-client.development.js:16921
+runWithFiberInDEV @ react-dom-client.development.js:872
+processDispatchQueue @ react-dom-client.development.js:16971
+(anonymous) @ react-dom-client.development.js:17572
+batchedUpdates$1 @ react-dom-client.development.js:3312
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:17125
+dispatchEvent @ react-dom-client.development.js:21308
+dispatchDiscreteEvent @ react-dom-client.development.js:21276
+api.ts:137 🔄 Attempt 2 failed: TypeError: Failed to fetch
+    at ApiService.request (api.ts:95:32)
+error @ intercept-console-error.ts:44
+request @ api.ts:137
+await in request
+request @ chatbots.ts:42
+await in request
+createChatbot @ chatbots.ts:54
+useCreateChatbot.useMutation @ use-chatbots.ts:39
+fn @ mutation.ts:174
+run @ retryer.ts:153
+start @ retryer.ts:218
+execute @ mutation.ts:213
+await in execute
+mutate @ mutationObserver.ts:125
+handleSave @ page.tsx:84
+executeDispatch @ react-dom-client.development.js:16921
+runWithFiberInDEV @ react-dom-client.development.js:872
+processDispatchQueue @ react-dom-client.development.js:16971
+(anonymous) @ react-dom-client.development.js:17572
+batchedUpdates$1 @ react-dom-client.development.js:3312
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:17125
+dispatchEvent @ react-dom-client.development.js:21308
+dispatchDiscreteEvent @ react-dom-client.development.js:21276
+api.ts:147 ⏳ Waiting 2000ms before retry...
+api.ts:94 📡 Attempt 3/4 - Fetching: http://localhost:8000/api/v1/chatbots
+new:1 Access to fetch at 'http://localhost:8000/api/v1/chatbots' from origin 'http://localhost:3001' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+api.ts:95  POST http://localhost:8000/api/v1/chatbots net::ERR_FAILED
+request @ api.ts:95
+await in request
+request @ chatbots.ts:42
+await in request
+createChatbot @ chatbots.ts:54
+useCreateChatbot.useMutation @ use-chatbots.ts:39
+fn @ mutation.ts:174
+run @ retryer.ts:153
+start @ retryer.ts:218
+execute @ mutation.ts:213
+await in execute
+mutate @ mutationObserver.ts:125
+handleSave @ page.tsx:84
+executeDispatch @ react-dom-client.development.js:16921
+runWithFiberInDEV @ react-dom-client.development.js:872
+processDispatchQueue @ react-dom-client.development.js:16971
+(anonymous) @ react-dom-client.development.js:17572
+batchedUpdates$1 @ react-dom-client.development.js:3312
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:17125
+dispatchEvent @ react-dom-client.development.js:21308
+dispatchDiscreteEvent @ react-dom-client.development.js:21276
+api.ts:137 🔄 Attempt 3 failed: TypeError: Failed to fetch
+    at ApiService.request (api.ts:95:32)
+error @ intercept-console-error.ts:44
+request @ api.ts:137
+await in request
+request @ chatbots.ts:42
+await in request
+createChatbot @ chatbots.ts:54
+useCreateChatbot.useMutation @ use-chatbots.ts:39
+fn @ mutation.ts:174
+run @ retryer.ts:153
+start @ retryer.ts:218
+execute @ mutation.ts:213
+await in execute
+mutate @ mutationObserver.ts:125
+handleSave @ page.tsx:84
+executeDispatch @ react-dom-client.development.js:16921
+runWithFiberInDEV @ react-dom-client.development.js:872
+processDispatchQueue @ react-dom-client.development.js:16971
+(anonymous) @ react-dom-client.development.js:17572
+batchedUpdates$1 @ react-dom-client.development.js:3312
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:17125
+dispatchEvent @ react-dom-client.development.js:21308
+dispatchDiscreteEvent @ react-dom-client.development.js:21276
+api.ts:147 ⏳ Waiting 4000ms before retry...
+api.ts:94 📡 Attempt 4/4 - Fetching: http://localhost:8000/api/v1/chatbots
+new:1 Access to fetch at 'http://localhost:8000/api/v1/chatbots' from origin 'http://localhost:3001' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+api.ts:95  POST http://localhost:8000/api/v1/chatbots net::ERR_FAILED
+request @ api.ts:95
+await in request
+request @ chatbots.ts:42
+await in request
+createChatbot @ chatbots.ts:54
+useCreateChatbot.useMutation @ use-chatbots.ts:39
+fn @ mutation.ts:174
+run @ retryer.ts:153
+start @ retryer.ts:218
+execute @ mutation.ts:213
+await in execute
+mutate @ mutationObserver.ts:125
+handleSave @ page.tsx:84
+executeDispatch @ react-dom-client.development.js:16921
+runWithFiberInDEV @ react-dom-client.development.js:872
+processDispatchQueue @ react-dom-client.development.js:16971
+(anonymous) @ react-dom-client.development.js:17572
+batchedUpdates$1 @ react-dom-client.development.js:3312
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:17125
+dispatchEvent @ react-dom-client.development.js:21308
+dispatchDiscreteEvent @ react-dom-client.development.js:21276
+api.ts:137 🔄 Attempt 4 failed: TypeError: Failed to fetch
+    at ApiService.request (api.ts:95:32)
+error @ intercept-console-error.ts:44
+request @ api.ts:137
+await in request
+request @ chatbots.ts:42
+await in request
+createChatbot @ chatbots.ts:54
+useCreateChatbot.useMutation @ use-chatbots.ts:39
+fn @ mutation.ts:174
+run @ retryer.ts:153
+start @ retryer.ts:218
+execute @ mutation.ts:213
+await in execute
+mutate @ mutationObserver.ts:125
+handleSave @ page.tsx:84
+executeDispatch @ react-dom-client.development.js:16921
+runWithFiberInDEV @ react-dom-client.development.js:872
+processDispatchQueue @ react-dom-client.development.js:16971
+(anonymous) @ react-dom-client.development.js:17572
+batchedUpdates$1 @ react-dom-client.development.js:3312
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:17125
+dispatchEvent @ react-dom-client.development.js:21308
+dispatchDiscreteEvent @ react-dom-client.development.js:21276
+api.ts:141 💥 Final error - giving up: TypeError: Failed to fetch
+    at ApiService.request (api.ts:95:32)
+error @ intercept-console-error.ts:44
+request @ api.ts:141
+await in request
+request @ chatbots.ts:42
+await in request
+createChatbot @ chatbots.ts:54
+useCreateChatbot.useMutation @ use-chatbots.ts:39
+fn @ mutation.ts:174
+run @ retryer.ts:153
+start @ retryer.ts:218
+execute @ mutation.ts:213
+await in execute
+mutate @ mutationObserver.ts:125
+handleSave @ page.tsx:84
+executeDispatch @ react-dom-client.development.js:16921
+runWithFiberInDEV @ react-dom-client.development.js:872
+processDispatchQueue @ react-dom-client.development.js:16971
+(anonymous) @ react-dom-client.development.js:17572
+batchedUpdates$1 @ react-dom-client.development.js:3312
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:17125
+dispatchEvent @ react-dom-client.development.js:21308
+dispatchDiscreteEvent @ react-dom-client.development.js:21276
+page.tsx:95 💥 Error creating chatbot: TypeError: Failed to fetch
+    at ApiService.request (api.ts:95:32)
+error @ intercept-console-error.ts:44
+handleSave @ page.tsx:95
+await in handleSave
+executeDispatch @ react-dom-client.development.js:16921
+runWithFiberInDEV @ react-dom-client.development.js:872
+processDispatchQueue @ react-dom-client.development.js:16971
+(anonymous) @ react-dom-client.development.js:17572
+batchedUpdates$1 @ react-dom-client.development.js:3312
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:17125
+dispatchEvent @ react-dom-client.development.js:21308
+dispatchDiscreteEvent @ react-dom-client.development.js:21276
+page.tsx:96 Error details: {message: 'Failed to fetch', stack: 'TypeError: Failed to fetch\n    at ApiService.reque…3001/_next/static/chunks/lib_8f4525b0._.js:68:40)', fullError: TypeError: Failed to fetch
+    at ApiService.request (http://localhost:3001/_next/static/chunks/lib…}
+error @ intercept-console-error.ts:44
+handleSave @ page.tsx:96
+await in handleSave
+executeDispatch @ react-dom-client.development.js:16921
+runWithFiberInDEV @ react-dom-client.development.js:872
+processDispatchQueue @ react-dom-client.development.js:16971
+(anonymous) @ react-dom-client.development.js:17572
+batchedUpdates$1 @ react-dom-client.development.js:3312
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:17125
+dispatchEvent @ react-dom-client.development.js:21308
+dispatchDiscreteEvent @ react-dom-client.development.js:21276
+page.tsx:108 🏁 Chatbot creation process completed

@@ -1,105 +1,130 @@
+// Backend Chatbot model structure
 export interface Chatbot {
   id: string;
   name: string;
   description?: string;
-  status: 'active' | 'inactive' | 'draft';
-  model: string;
-  configuration: {
-    system_prompt?: string;
-    temperature?: number;
-    max_tokens?: number;
-    voice_enabled?: boolean;
-    voice_id?: string;
-    appearance?: {
-      theme: 'light' | 'dark';
-      primary_color: string;
-      position: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
-    };
-  };
-  usage: {
-    conversations: number;
-    messages: number;
-    tokens: number;
-  };
-  documents: Array<{
-    id: string;
-    filename: string;
-    size: number;
-    processed: boolean;
-  }>;
+  system_prompt?: string;
+  appearance_config?: Record<string, any>;
+  is_active: boolean;
+  user_id: string;
   created_at: string;
   updated_at: string;
 }
 
-export interface CreateChatbotRequest {
+export interface ChatbotCreate {
   name: string;
   description?: string;
-  model?: string;
-  configuration?: Partial<Chatbot['configuration']>;
+  system_prompt?: string;
+  appearance_config?: Record<string, any>;
+  is_active?: boolean;
 }
 
-export interface UpdateChatbotRequest {
+export interface ChatbotUpdate {
   name?: string;
   description?: string;
-  configuration?: Partial<Chatbot['configuration']>;
+  system_prompt?: string;
+  appearance_config?: Record<string, any>;
+  is_active?: boolean;
+}
+
+// Frontend display format (transformed from backend data)
+export interface ChatbotDisplay extends Chatbot {
+  status: 'active' | 'inactive' | 'draft';
+  model: string;
+  conversations: number;
+  documents: number;
+  lastActivity: string;
 }
 
 class ChatbotService {
-  private baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-
-  private async fetchWithAuth(url: string, options?: RequestInit) {
-    const token = localStorage.getItem('access_token');
-    
-    const response = await fetch(`${this.baseUrl}${url}`, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-        ...options?.headers,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
-    }
-
-    return response.json();
+  private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+    const { apiService } = await import('../api');
+    return (apiService as any).request<T>(endpoint, options);
   }
 
   async getChatbots(): Promise<Chatbot[]> {
-    return this.fetchWithAuth('/api/v1/chatbots');
+    return this.request<Chatbot[]>('/api/v1/chatbots');
   }
 
   async getChatbot(id: string): Promise<Chatbot> {
-    return this.fetchWithAuth(`/api/v1/chatbots/${id}`);
+    return this.request<Chatbot>(`/api/v1/chatbots/${id}`);
   }
 
-  async createChatbot(data: CreateChatbotRequest): Promise<Chatbot> {
-    return this.fetchWithAuth('/api/v1/chatbots', {
+  async createChatbot(data: ChatbotCreate): Promise<Chatbot> {
+    return this.request<Chatbot>('/api/v1/chatbots', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async updateChatbot(id: string, data: UpdateChatbotRequest): Promise<Chatbot> {
-    return this.fetchWithAuth(`/api/v1/chatbots/${id}`, {
+  async updateChatbot(id: string, data: ChatbotUpdate): Promise<Chatbot> {
+    return this.request<Chatbot>(`/api/v1/chatbots/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
-  async deleteChatbot(id: string): Promise<void> {
-    return this.fetchWithAuth(`/api/v1/chatbots/${id}`, {
+  async deleteChatbot(id: string): Promise<{ message: string }> {
+    return this.request(`/api/v1/chatbots/${id}`, {
       method: 'DELETE',
     });
   }
 
-  async getChatbotEmbed(id: string): Promise<{ script: string; config: any }> {
-    return this.fetchWithAuth(`/api/v1/chatbots/${id}/embed`);
+  // Transform backend data to frontend display format
+  async getChatbotsDisplay(): Promise<ChatbotDisplay[]> {
+    const chatbots = await this.getChatbots();
+    return chatbots.map(this.transformToDisplay);
   }
 
-  async getUsage(id: string, period: 'day' | 'week' | 'month' = 'week') {
-    return this.fetchWithAuth(`/api/v1/chatbots/${id}/usage?period=${period}`);
+  async getChatbotDisplay(id: string): Promise<ChatbotDisplay> {
+    const chatbot = await this.getChatbot(id);
+    return this.transformToDisplay(chatbot);
+  }
+
+  private transformToDisplay(chatbot: Chatbot): ChatbotDisplay {
+    return {
+      ...chatbot,
+      status: chatbot.is_active ? 'active' : 'inactive',
+      model: 'GPT-4', // Default model for now
+      conversations: 0, // Will be populated by analytics
+      documents: 0, // Will be populated by document count
+      lastActivity: chatbot.updated_at,
+    };
+  }
+
+  // Widget/embed functionality
+  async getEmbedCode(id: string): Promise<{ 
+    script: string; 
+    config: Record<string, any> 
+  }> {
+    const chatbot = await this.getChatbot(id);
+    
+    // Generate embed code
+    const script = `
+<script>
+  (function() {
+    const chatbotConfig = {
+      chatbotId: "${chatbot.id}",
+      apiUrl: "${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}",
+      appearance: ${JSON.stringify(chatbot.appearance_config || {})},
+      systemPrompt: "${chatbot.system_prompt || ''}"
+    };
+    
+    // Load chatbot widget
+    const script = document.createElement('script');
+    script.src = '${process.env.NEXT_PUBLIC_WIDGET_URL || 'http://localhost:3000'}/widget.js';
+    script.async = true;
+    script.onload = function() {
+      window.ChatbotWidget.init(chatbotConfig);
+    };
+    document.head.appendChild(script);
+  })();
+</script>`;
+
+    return {
+      script,
+      config: chatbot.appearance_config || {}
+    };
   }
 }
 

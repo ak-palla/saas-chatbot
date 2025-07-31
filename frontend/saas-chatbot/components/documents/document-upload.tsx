@@ -16,6 +16,7 @@ import {
 import { documentService } from "@/lib/api/documents";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useChatbots } from "@/lib/hooks/use-chatbots";
+import { cn } from "@/lib/utils";
 
 interface DocumentUploadProps {
   onClose: () => void;
@@ -59,7 +60,7 @@ export function DocumentUpload({ onClose }: DocumentUploadProps) {
     setUploadFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const uploadFiles = async () => {
+  const handleUploadFiles = async () => {
     if (uploadFiles.length === 0 || !selectedChatbotId) return;
 
     setIsUploading(true);
@@ -197,7 +198,7 @@ export function DocumentUpload({ onClose }: DocumentUploadProps) {
               <Card key={index}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3"
+                    <div className="flex items-center space-x-3">
                       <div>{getStatusIcon(file.status)}</div>
                       <div>
                         <p className="font-medium">{file.file.name}</p>
@@ -238,7 +239,7 @@ export function DocumentUpload({ onClose }: DocumentUploadProps) {
       <div className="flex justify-end space-x-2">
         <Button variant="outline" onClick={onClose}>Cancel</Button>
         <Button 
-          onClick={uploadFiles} 
+          onClick={handleUploadFiles} 
           disabled={uploadFiles.length === 0 || isUploading}
         >
           {isUploading ? 'Uploading...' : 'Upload All'}
@@ -248,60 +249,4 @@ export function DocumentUpload({ onClose }: DocumentUploadProps) {
   );
 }
 
-// Since we're using a local mock, let's create a simple dropzone implementation
-function useDropzone({ onDrop, accept, maxSize }: any) {
-  const [isDragActive, setIsDragActive] = useState(false);
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragActive(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragActive(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragActive(false);
-    
-    const files = Array.from(e.dataTransfer.files) as File[];
-    const filteredFiles = files.filter(file => {
-      const fileType = file.type;
-      const fileSize = file.size;
-      
-      const isAccepted = Object.values(accept || {}).some((types: any) => 
-        types.includes(fileType)
-      );
-      
-      return isAccepted && fileSize <= maxSize;
-    });
-    
-    if (onDrop) onDrop(filteredFiles);
-  };
-
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []) as File[];
-    if (onDrop) onDrop(files);
-  };
-
-  return {
-    getRootProps: () => ({
-      onDragOver: handleDragOver,
-      onDragLeave: handleDragLeave,
-      onDrop: handleDrop,
-    }),
-    getInputProps: () => ({
-      type: 'file',
-      multiple: true,
-      accept: Object.values(accept || {}).flat().join(','),
-      onChange: handleFileInput,
-    }),
-    isDragActive,
-  };
-}
-
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(' ');
-}

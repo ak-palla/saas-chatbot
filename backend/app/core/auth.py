@@ -1,11 +1,16 @@
 from datetime import datetime, timedelta
 from typing import Optional
+import logging
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.core.config import settings
 from app.core.database import get_supabase
+
+# Set up logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
@@ -43,29 +48,52 @@ def verify_token(token: str) -> dict:
 
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    logger.info("🔐 Authenticating user...")
+    logger.info(f"🎫 Token received: {credentials.credentials[:20]}...")  # Log first 20 chars only
+    
     token = credentials.credentials
-    payload = verify_token(token)
+    try:
+        payload = verify_token(token)
+        logger.info(f"✅ Token verified successfully")
+        logger.info(f"📋 Token payload: {payload}")
+    except Exception as e:
+        logger.error(f"❌ Token verification failed: {str(e)}")
+        raise
+    
     user_id: str = payload.get("sub")
     if user_id is None:
+        logger.error("❌ No user ID in token payload")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
         )
     
+    logger.info(f"👤 User ID from token: {user_id}")
+    
     # Get user from Supabase
     supabase = get_supabase()
     try:
+        logger.info("📡 Fetching user from database...")
         response = supabase.table("users").select("*").eq("id", user_id).execute()
+        logger.info(f"🔍 Database response: {response}")
+        
         if not response.data:
+            logger.error("❌ User not found in database")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not found",
             )
-        return response.data[0]
+        
+        user = response.data[0]
+        logger.info(f"✅ User authenticated successfully: {user['id']}")
+        return user
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error(f"💥 Database error during user lookup: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate user",
+            detail=f"Could not validate user: {str(e)}",
         )
 
 

@@ -8,7 +8,7 @@ from typing import List
 import io
 
 from app.models.document import Document, DocumentUploadResponse, DocumentSearchResult
-from app.core.auth import get_current_user
+from app.core.supabase_auth import get_current_user_supabase
 from app.services.document_service import document_service
 
 router = APIRouter()
@@ -18,7 +18,7 @@ router = APIRouter()
 async def upload_document(
     chatbot_id: str = Form(...),
     file: UploadFile = File(...),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_supabase)
 ):
     """Upload and process a document for a chatbot"""
     try:
@@ -66,7 +66,7 @@ async def upload_document(
 @router.get("/chatbot/{chatbot_id}", response_model=List[Document])
 async def list_documents(
     chatbot_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_supabase)
 ):
     """List all documents for a chatbot"""
     try:
@@ -86,7 +86,7 @@ async def list_documents(
 @router.get("/{document_id}", response_model=Document)
 async def get_document(
     document_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_supabase)
 ):
     """Get a specific document"""
     try:
@@ -115,7 +115,7 @@ async def get_document(
 @router.delete("/{document_id}")
 async def delete_document(
     document_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_supabase)
 ):
     """Delete a document and its embeddings"""
     try:
@@ -146,7 +146,7 @@ async def search_documents(
     chatbot_id: str,
     query: str = Form(...),
     limit: int = Form(10),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_supabase)
 ):
     """Search documents by content similarity"""
     try:

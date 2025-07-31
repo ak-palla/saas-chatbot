@@ -14,7 +14,7 @@ from app.models.voice import (
     SpeechToTextRequest, SpeechToTextResponse, VoiceConfig, VoiceConfigUpdate,
     VoicePreviewRequest, AvailableVoice, VoiceCapabilities
 )
-from app.core.auth import get_current_user
+from app.core.supabase_auth import get_current_user_supabase
 from app.services.voice_service import voice_service
 from app.services.stt_service import stt_service
 from app.services.tts_service import tts_service
@@ -32,7 +32,7 @@ async def voice_chat(
     conversation_id: Optional[str] = Form(None),
     voice_config: Optional[str] = Form(None),  # JSON string
     use_rag: bool = Form(True),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_supabase)
 ):
     """
     Process voice message through complete STT→LLM→TTS pipeline
@@ -136,7 +136,7 @@ async def voice_chat(
 @router.post("/tts", response_model=bytes)
 async def text_to_speech(
     request: TextToSpeechRequest,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_supabase)
 ):
     """
     Convert text to speech
@@ -182,7 +182,7 @@ async def speech_to_text(
     language: Optional[str] = Form(None),
     prompt: Optional[str] = Form(None),
     temperature: float = Form(0.0),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_supabase)
 ):
     """
     Convert speech to text
@@ -263,7 +263,7 @@ async def get_available_voices():
 async def preview_voice(
     voice_id: str,
     request: VoicePreviewRequest,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_supabase)
 ):
     """
     Generate voice preview sample
@@ -305,7 +305,7 @@ async def preview_voice(
 @router.get("/config/{chatbot_id}", response_model=VoiceConfig)
 async def get_voice_config(
     chatbot_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_supabase)
 ):
     """Get voice configuration for chatbot"""
     try:
@@ -344,7 +344,7 @@ async def get_voice_config(
 async def update_voice_config(
     chatbot_id: str,
     config_update: VoiceConfigUpdate,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_supabase)
 ):
     """Update voice configuration for chatbot"""
     try:

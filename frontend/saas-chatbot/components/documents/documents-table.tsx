@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { formatDistanceToNow } from "date-fns";
+import { useChatbots } from "@/lib/hooks/use-chatbots";
 import { 
   Table, 
   TableBody, 
@@ -105,7 +106,7 @@ export function DocumentsTable({ searchTerm, chatbotId }: DocumentsTableProps) {
 
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = doc.original_filename.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesChatbot = !chatbotId || doc.chatbot_id === chatbotId;
+    const matchesChatbot = !chatbotId || chatbotId === "all" || doc.chatbot_id === chatbotId;
     return matchesSearch && matchesChatbot;
   });
 

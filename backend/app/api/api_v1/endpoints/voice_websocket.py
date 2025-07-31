@@ -9,7 +9,8 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPExce
 from typing import Optional
 
 from app.core.websocket_manager import websocket_manager, VoiceSession
-from app.core.auth import get_current_user_websocket, get_current_user
+from app.core.supabase_auth import get_current_user_websocket_supabase
+from app.core.auth import get_current_user
 from app.services.voice_service import voice_service
 from app.models.voice import VoiceConfig
 
@@ -43,7 +44,7 @@ async def voice_chat_websocket(
             return
         
         try:
-            user = await get_current_user_websocket(token)
+            user = await get_current_user_websocket_supabase(token)
             user_id = user["id"]
         except Exception as e:
             logger.error(f"WebSocket authentication failed: {e}")

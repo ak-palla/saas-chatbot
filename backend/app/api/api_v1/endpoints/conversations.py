@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from typing import List
 from app.models.conversation import Conversation, ConversationCreate
-from app.core.auth import get_current_user
+from app.core.supabase_auth import get_current_user_supabase
 from app.core.database import get_supabase
 from app.core.middleware import limiter
 
@@ -13,7 +13,7 @@ router = APIRouter()
 async def create_conversation(
     
     conversation: ConversationCreate,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_supabase)
 ):
     """Create a new conversation"""
     supabase = get_supabase()
@@ -46,7 +46,7 @@ async def create_conversation(
 async def get_chatbot_conversations(
     
     chatbot_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_supabase)
 ):
     """Get all conversations for a specific chatbot"""
     supabase = get_supabase()
@@ -68,7 +68,7 @@ async def get_chatbot_conversations(
 async def get_conversation(
     
     conversation_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_supabase)
 ):
     """Get a specific conversation"""
     supabase = get_supabase()
@@ -90,7 +90,7 @@ async def get_conversation(
 async def delete_conversation(
     
     conversation_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_supabase)
 ):
     """Delete a conversation"""
     supabase = get_supabase()

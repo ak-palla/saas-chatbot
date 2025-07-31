@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -27,73 +28,44 @@ import {
   SortingState,
 } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, ExternalLink, Copy, Trash2 } from "lucide-react";
+import { MoreHorizontal, ExternalLink, Copy, Trash2, Edit, TestTube, Loader2, Code } from "lucide-react";
+import { useChatbotsDisplay, useDeleteChatbot } from "@/lib/hooks/use-chatbots";
+import { useToast } from "@/components/ui/use-toast";
+import type { ChatbotDisplay } from "@/lib/api/chatbots";
 
-interface Chatbot {
-  id: string;
-  name: string;
-  status: "active" | "inactive" | "draft";
-  model: string;
-  conversations: number;
-  documents: number;
-  createdAt: string;
-  lastActivity: string;
-}
-
-const mockChatbots: Chatbot[] = [
-  {
-    id: "1",
-    name: "Customer Support Bot",
-    status: "active",
-    model: "GPT-4",
-    conversations: 342,
-    documents: 15,
-    createdAt: "2024-01-15",
-    lastActivity: "2 hours ago",
-  },
-  {
-    id: "2",
-    name: "Sales Assistant",
-    status: "active",
-    model: "GPT-3.5",
-    conversations: 156,
-    documents: 8,
-    createdAt: "2024-01-10",
-    lastActivity: "5 hours ago",
-  },
-  {
-    id: "3",
-    name: "FAQ Bot",
-    status: "inactive",
-    model: "GPT-3.5",
-    conversations: 89,
-    documents: 5,
-    createdAt: "2024-01-05",
-    lastActivity: "1 day ago",
-  },
-  {
-    id: "4",
-    name: "Product Guide",
-    status: "draft",
-    model: "GPT-4",
-    conversations: 0,
-    documents: 3,
-    createdAt: "2024-01-20",
-    lastActivity: "Never",
-  },
-];
-
+// Props interface for the table component
 interface ChatbotTableProps {
-  searchTerm: string;
-  statusFilter: string;
-  sortBy: string;
+  searchTerm?: string;
+  statusFilter?: string;
+  sortBy?: string;
 }
 
-export function ChatbotTable({ searchTerm, statusFilter, sortBy }: ChatbotTableProps) {
+export function ChatbotTable({ searchTerm = '', statusFilter = '', sortBy = '' }: ChatbotTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState({});
+  const { toast } = useToast();
+  
+  // Fetch real chatbot data
+  const { data: chatbots = [], isLoading, error } = useChatbotsDisplay();
+  const deleteChatbot = useDeleteChatbot();
 
-  const columns: ColumnDef<Chatbot>[] = [
+  const handleDelete = async (chatbotId: string) => {
+    try {
+      await deleteChatbot.mutateAsync(chatbotId);
+      toast({
+        title: "Success",
+        description: "Chatbot deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete chatbot",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const columns: ColumnDef<ChatbotDisplay>[] = [
     {
       id: "select",
       header: ({ table }) => (
@@ -174,19 +146,28 @@ export function ChatbotTable({ searchTerm, statusFilter, sortBy }: ChatbotTableP
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(chatbot.id)}
-              >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                View Details
+              <DropdownMenuItem asChild>
+                <Link href={`/dashboard/chatbots/${chatbot.id}/edit`}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href={`/dashboard/chatbots/${chatbot.id}/test`}>
+                  <TestTube className="mr-2 h-4 w-4" />
+                  Test
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => navigator.clipboard.writeText(chatbot.id)}
               >
                 <Copy className="mr-2 h-4 w-4" />
-                Duplicate
+                Copy ID
               </DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem 
+                className="text-destructive"
+                onClick={() => handleDelete(chatbot.id)}
+              >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete
               </DropdownMenuItem>
@@ -197,13 +178,21 @@ export function ChatbotTable({ searchTerm, statusFilter, sortBy }: ChatbotTableP
     },
   ];
 
+  // Filter chatbots based on search and status
+  const filteredChatbots = chatbots.filter(chatbot => {
+    const matchesSearch = searchTerm ? 
+      chatbot.name.toLowerCase().includes(searchTerm.toLowerCase()) : true;
+    const matchesStatus = statusFilter ? 
+      chatbot.status === statusFilter : true;
+    return matchesSearch && matchesStatus;
+  });
+
   const table = useReactTable({
-    data: mockChatbots,
+    data: filteredChatbots,
     columns,
     state: {
       sorting,
       rowSelection,
-      globalFilter: searchTerm,
     },
     onSortingChange: setSorting,
     onRowSelectionChange: setRowSelection,
@@ -211,6 +200,36 @@ export function ChatbotTable({ searchTerm, statusFilter, sortBy }: ChatbotTableP
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
   });
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="rounded-md border">
+        <div className="flex items-center justify-center h-64">
+          <div className="space-y-4 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+            <p className="text-muted-foreground">Loading chatbots...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="rounded-md border">
+        <div className="flex items-center justify-center h-64">
+          <div className="space-y-4 text-center">
+            <p className="text-destructive">Failed to load chatbots</p>
+            <Button onClick={() => window.location.reload()} variant="outline">
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-md border">
@@ -248,7 +267,7 @@ export function ChatbotTable({ searchTerm, statusFilter, sortBy }: ChatbotTableP
           ) : (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center">
-                No chatbots found.
+                {searchTerm || statusFilter ? 'No chatbots match your filters.' : 'No chatbots found. Create your first chatbot to get started.'}
               </TableCell>
             </TableRow>
           )}

@@ -1,30 +1,29 @@
 import { DashboardStats } from "@/components/dashboard/dashboard-stats";
 import { RecentChatbots } from "@/components/dashboard/recent-chatbots";
-import { QuickActions } from "@/components/dashboard/quick-actions";
 import { UsageChart } from "@/components/dashboard/usage-chart";
+import { Header } from "@/components/dashboard/header";
+import { DebugUser } from "@/components/debug-user";
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Welcome back! Here's what's happening with your chatbots.
-          </p>
-        </div>
+    <div className="space-y-8">
+      <DebugUser />
+      <Header 
+        title="Dashboard" 
+        description="Welcome back! Here's what's happening with your chatbots." 
+      />
+
+      <div className="space-y-1">
+        <DashboardStats />
       </div>
 
-      <DashboardStats />
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <UsageChart />
-        </div>
-        <QuickActions />
+      <div className="space-y-6">
+        <UsageChart />
       </div>
 
-      <RecentChatbots />
+      <div className="pt-2">
+        <RecentChatbots />
+      </div>
     </div>
   );
 }

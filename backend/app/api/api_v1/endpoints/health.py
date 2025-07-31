@@ -1,5 +1,10 @@
 from fastapi import APIRouter
+import logging
 from app.core.middleware import limiter, RATE_LIMITING_ENABLED
+
+# Set up logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 router = APIRouter()
 
@@ -7,7 +12,10 @@ router = APIRouter()
 @router.get("/")
 async def health_check():
     """Health check endpoint"""
-    return {"status": "healthy", "message": "Chatbot SaaS Platform API is running"}
+    logger.info("🏥 Health check requested")
+    result = {"status": "healthy", "message": "Chatbot SaaS Platform API is running"}
+    logger.info(f"✅ Health check response: {result}")
+    return result
 
 
 @router.get("/db")

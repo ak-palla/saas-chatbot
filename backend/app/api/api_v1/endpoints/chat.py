@@ -9,7 +9,7 @@ from typing import AsyncGenerator
 import json
 
 from app.models.message import ChatRequest, ChatResponse, StreamingChatChunk
-from app.core.auth import get_current_user
+from app.core.supabase_auth import get_current_user_supabase
 from app.services.message_service import message_service
 # Rate limiting handled at middleware level
 
@@ -19,7 +19,7 @@ router = APIRouter()
 @router.post("/completions", response_model=ChatResponse)
 async def chat_completion(
     request: ChatRequest,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_supabase)
 ):
     """
     Generate AI response for chat message
@@ -66,7 +66,7 @@ async def chat_completion(
 @router.post("/completions/stream")
 async def chat_completion_stream(
     request: ChatRequest,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_supabase)
 ):
     """
     Generate streaming AI response for chat message
@@ -137,7 +137,7 @@ async def chat_completion_stream(
 @router.get("/conversations/{conversation_id}/summary")
 async def get_conversation_summary(
     conversation_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_supabase)
 ):
     """Get a summary of a conversation"""
     try:
@@ -179,7 +179,7 @@ async def list_available_models():
 @router.get("/chatbot/{chatbot_id}/knowledge-stats")
 async def get_knowledge_base_stats(
     chatbot_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_supabase)
 ):
     """Get knowledge base statistics for a chatbot"""
     try:
@@ -217,7 +217,7 @@ async def get_knowledge_base_stats(
 @router.get("/chatbot/{chatbot_id}/tools")
 async def list_chatbot_tools(
     chatbot_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_supabase)
 ):
     """List available tools for a chatbot's agent"""
     try:
