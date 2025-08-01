@@ -365,12 +365,20 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
 
   const sendVoiceMessage = async (message: string) => {
     console.log('🎤 VOICE DEBUG: sendVoiceMessage called with:', message);
+    
+    // Re-check voice enabled status from chatbot directly (in case state got reset)
+    const currentVoiceEnabled = chatbot?.behavior_config?.enableVoice || false;
     console.log('🔍 VOICE DEBUG: Current state check:', {
       messageLength: message?.length,
       isLoading,
       chatbotId: chatbot?.id,
-      voiceEnabled
+      voiceEnabled,
+      currentVoiceEnabled,
+      behaviorConfig: chatbot?.behavior_config
     });
+    
+    // Use the current voice status from chatbot data, not the potentially stale state
+    const shouldUseVoice = currentVoiceEnabled;
 
     if (!message.trim() || isLoading || !chatbot?.id) {
       console.warn('⚠️ VOICE DEBUG: Cannot send voice message - requirements not met:', {
