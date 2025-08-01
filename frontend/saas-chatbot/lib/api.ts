@@ -48,18 +48,45 @@ export interface ApiError {
   status: number;
 }
 
+export interface TestChatMessage {
+  role: string;
+  content: string;
+}
+
+export interface TestChatRequest {
+  message: string;
+  conversation_history: TestChatMessage[];
+}
+
+export interface TestChatResponse {
+  response: string;
+  conversation_id: string;
+}
+
 class ApiService {
-  private async getAuthHeaders(): Promise<Record<string, string>> {
+  private async getCurrentUserEmail(): Promise<string> {
     const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
     
-    if (session?.access_token) {
-      return {
-        'Authorization': `Bearer ${session.access_token}`,
-      };
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error) {
+        console.error('🚫 Auth error:', error);
+        throw new Error('Authentication failed');
+      }
+
+      if (!user?.email) {
+        console.error('🚫 No user or email found');
+        throw new Error('User not authenticated');
+      }
+
+      console.log('👤 Current user email:', user.email);
+      return user.email;
+      
+    } catch (error) {
+      console.error('🚫 Error getting user email:', error);
+      throw error;
     }
-    
-    return {};
   }
 
   private async request<T>(
@@ -69,30 +96,32 @@ class ApiService {
   ): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
     
-    // Get auth headers
-    const authHeaders = await this.getAuthHeaders();
+    // Get current user email for Supabase-native approach
+    const userEmail = await this.getCurrentUserEmail();
+    
+    // Add user email as query parameter for all requests
+    const urlWithEmail = new URL(url);
+    urlWithEmail.searchParams.set('user_email', userEmail);
     
     const config: RequestInit = {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        ...authHeaders,
         ...options.headers,
       },
     };
-
-    // Debug logging
-    console.log('🚀 API Request:', {
-      url,
+    
+    console.log('🚀 API Request (Supabase-native):', {
+      url: urlWithEmail.toString(),
       method: options.method || 'GET',
-      headers: config.headers,
+      userEmail,
       body: options.body ? JSON.parse(options.body as string) : null
     });
 
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
-        console.log(`📡 Attempt ${attempt + 1}/${retries + 1} - Fetching: ${url}`);
-        const response = await fetch(url, config);
+        console.log(`📡 Attempt ${attempt + 1}/${retries + 1} - Fetching: ${urlWithEmail.toString()}`);
+        const response = await fetch(urlWithEmail.toString(), config);
         
         console.log(`✅ Response received:`, {
           status: response.status,
@@ -101,11 +130,6 @@ class ApiService {
         });
 
         if (!response.ok) {
-          if (response.status === 401) {
-            console.error('🚫 Authentication error - User not logged in');
-            throw new Error('Authentication required. Please log in.');
-          }
-          
           let errorMessage = 'An error occurred';
           let errorData = null;
           try {
@@ -181,6 +205,13 @@ class ApiService {
     });
   }
 
+  async testChatbot(id: string, chatRequest: TestChatRequest): Promise<TestChatResponse> {
+    return this.request<TestChatResponse>(`/api/v1/chatbots/${id}/test-chat`, {
+      method: 'POST',
+      body: JSON.stringify(chatRequest),
+    });
+  }
+
   // Document endpoints  
   async getDocuments(): Promise<Document[]> {
     return this.request<Document[]>('/api/v1/documents');
@@ -191,15 +222,17 @@ class ApiService {
     formData.append('file', file);
     formData.append('chatbot_id', chatbotId);
 
-    // Get auth headers for FormData requests
-    const authHeaders = await this.getAuthHeaders();
+    // Get user email for Supabase-native approach
+    const userEmail = await this.getCurrentUserEmail();
+    
+    // For FormData, we'll add the email as a form field since URL params don't work well with file uploads
+    formData.append('user_email', userEmail);
     
     return this.request<Document>('/api/v1/documents/upload', {
       method: 'POST',
       body: formData,
       headers: {
-        // Don't set Content-Type for FormData
-        ...authHeaders
+        // Don't set Content-Type for FormData - browser will set it with boundary
       },
     });
   }
@@ -213,6 +246,20 @@ class ApiService {
   // Health check
   async healthCheck(): Promise<{ status: string; timestamp: string }> {
     return this.request('/api/v1/health');
+  }
+
+  // Auth test - debug endpoint to test Supabase authentication
+  async testAuth(): Promise<any> {
+    try {
+      const userEmail = await this.getCurrentUserEmail();
+      console.log('🧪 Testing Supabase auth for user:', userEmail);
+      return this.request('/api/v1/health', {
+        method: 'GET'
+      });
+    } catch (error) {
+      console.error('🧪 Auth test failed:', error);
+      throw error;
+    }
   }
 }
 

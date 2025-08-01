@@ -22,25 +22,57 @@ export interface DocumentUploadResponse {
   upload_url: string;
 }
 
+import { createClient } from '@/lib/supabase/client';
+
 class DocumentService {
   private baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-  private async fetchWithAuth(url: string, options?: RequestInit) {
-    const token = localStorage.getItem('access_token');
+  private async getCurrentUserEmail(): Promise<string> {
+    const supabase = createClient();
     
-    const response = await fetch(`${this.baseUrl}${url}`, {
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error || !user?.email) {
+        throw new Error('User not authenticated');
+      }
+
+      return user.email;
+    } catch (error) {
+      console.error('🚫 Error getting user email:', error);
+      throw error;
+    }
+  }
+
+  private async fetchWithAuth(url: string, options?: RequestInit) {
+    const userEmail = await this.getCurrentUserEmail();
+    
+    // Add user email as query parameter for Supabase-native approach
+    const urlWithEmail = new URL(`${this.baseUrl}${url}`);
+    urlWithEmail.searchParams.set('user_email', userEmail);
+    
+    const response = await fetch(urlWithEmail.toString(), {
       ...options,
-      headers: {
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-        ...options?.headers,
-      },
     });
 
     if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      let errorMessage = `API Error: ${response.status} ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.detail || errorMessage;
+      } catch {
+        // Keep default error message
+      }
+      throw new Error(errorMessage);
     }
 
-    return response.json();
+    // Handle empty responses
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return response.json();
+    } else {
+      return {};
+    }
   }
 
   async getDocuments(chatbotId?: string): Promise<Document[]> {
@@ -54,35 +86,37 @@ class DocumentService {
     return this.fetchWithAuth(`/api/v1/documents/${id}`);
   }
 
-  async uploadDocument(request: UploadDocumentRequest): Promise<DocumentUploadResponse> {
-    // First, get upload URL
-    const response = await this.fetchWithAuth('/api/v1/documents/upload', {
+  async uploadDocument(request: UploadDocumentRequest): Promise<Document> {
+    const userEmail = await this.getCurrentUserEmail();
+    
+    // Create FormData for direct file upload
+    const formData = new FormData();
+    formData.append('file', request.file);
+    formData.append('chatbot_id', request.chatbot_id);
+    formData.append('user_email', userEmail);
+
+    // Upload file directly to the API
+    const url = new URL(`${this.baseUrl}/api/v1/documents/upload`);
+    url.searchParams.set('user_email', userEmail);
+    
+    const response = await fetch(url.toString(), {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        filename: request.file.name,
-        file_type: request.file.type,
-        size: request.file.size,
-        chatbot_id: request.chatbot_id,
-      }),
+      body: formData,
+      // Don't set Content-Type header - browser will set it with boundary
     });
 
-    // Upload file to the provided URL
-    const uploadResponse = await fetch(response.upload_url, {
-      method: 'PUT',
-      body: request.file,
-      headers: {
-        'Content-Type': request.file.type,
-      },
-    });
-
-    if (!uploadResponse.ok) {
-      throw new Error('Failed to upload file');
+    if (!response.ok) {
+      let errorMessage = 'Upload failed';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.detail || errorMessage;
+      } catch {
+        // Keep default error message
+      }
+      throw new Error(errorMessage);
     }
 
-    return response;
+    return response.json();
   }
 
   async deleteDocument(id: string): Promise<void> {

@@ -24,61 +24,72 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Header } from '@/components/dashboard/header';
-import { useState } from 'react';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-
-const chatbots = [
-  {
-    id: 1,
-    name: 'Customer Support Bot',
-    type: 'text',
-    status: 'active',
-    conversations: 1234,
-    documents: 45,
-    lastActive: '2 hours ago',
-    created: '2024-01-15',
-  },
-  {
-    id: 2,
-    name: 'Voice Assistant',
-    type: 'voice',
-    status: 'active',
-    conversations: 567,
-    documents: 23,
-    lastActive: '5 minutes ago',
-    created: '2024-01-20',
-  },
-  {
-    id: 3,
-    name: 'Sales Assistant',
-    type: 'text',
-    status: 'training',
-    conversations: 89,
-    documents: 12,
-    lastActive: '1 day ago',
-    created: '2024-01-25',
-  },
-  {
-    id: 4,
-    name: 'HR Helper',
-    type: 'text',
-    status: 'inactive',
-    conversations: 234,
-    documents: 8,
-    lastActive: '3 days ago',
-    created: '2024-01-10',
-  },
-];
+import { apiService } from '@/lib/api';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function ChatbotsPage() {
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('all');
+  const [chatbots, setChatbots] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchChatbots = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        console.log('📋 Fetching user chatbots...');
+        const chatbotsData = await apiService.getChatbots();
+        console.log('✅ Chatbots loaded:', chatbotsData);
+        setChatbots(chatbotsData || []);
+      } catch (err) {
+        console.error('❌ Error fetching chatbots:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load chatbots';
+        setError(errorMessage);
+        
+        toast({
+          title: "Error Loading Chatbots",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchChatbots();
+  }, [toast]);
 
   const filteredChatbots = chatbots.filter(chatbot => {
-    const matchesSearch = chatbot.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = selectedType === 'all' || chatbot.type === selectedType;
+    const matchesSearch = chatbot.name?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
+    // For now, treat all chatbots as 'text' type since we don't have voice classification yet
+    const matchesType = selectedType === 'all' || selectedType === 'text';
     return matchesSearch && matchesType;
   });
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const getRelativeTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+    
+    return formatDate(dateString);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -155,111 +166,123 @@ export default function ChatbotsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredChatbots.map((chatbot) => (
-                  <TableRow 
-                    key={chatbot.id} 
-                    className="hover:bg-accent/50 transition-colors border-border"
-                  >
-                    <TableCell className="font-medium text-foreground">
-                      {chatbot.name}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {chatbot.type === 'voice' ? (
-                          <Mic className="w-4 h-4 text-primary" />
-                        ) : (
-                          <MessageSquare className="w-4 h-4 text-primary" />
-                        )}
-                        <span className="capitalize text-muted-foreground">
-                          {chatbot.type}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        className={cn(
-                          "font-medium",
-                          getStatusColor(chatbot.status)
-                        )}
-                        variant="outline"
-                      >
-                        {chatbot.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {chatbot.conversations.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {chatbot.documents}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {chatbot.lastActive}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end gap-2">
-                        <Switch 
-                          defaultChecked={chatbot.status === 'active'} 
-                          size="sm"
-                        />
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                              <MoreVertical className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
-                              Actions
-                            </DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="gap-2">
-                              <Eye className="w-4 h-4" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                              <Link href={`/dashboard/chatbots/${chatbot.id}/edit`} className="gap-2">
-                                <Edit className="w-4 h-4" />
-                                Edit Configuration
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="gap-2">
-                              <Play className="w-4 h-4" />
-                              Test Chatbot
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive gap-2">
-                              <Trash2 className="w-4 h-4" />
-                              Delete Chatbot
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-12">
+                      <LoadingSpinner size="lg" />
+                      <div className="mt-4 text-muted-foreground">Loading chatbots...</div>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : filteredChatbots.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-12">
+                      <Bot className="mx-auto h-12 w-12 text-muted-foreground/50" />
+                      <h3 className="mt-4 text-lg font-medium text-foreground">No chatbots found</h3>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {searchQuery ? 'No chatbots match your search criteria.' : 'Get started by creating your first chatbot.'}
+                      </p>
+                      {!searchQuery && (
+                        <div className="mt-6">
+                          <Link href="/dashboard/chatbots/new">
+                            <Button>
+                              <Plus className="w-4 h-4 mr-2" />
+                              Create Chatbot
+                            </Button>
+                          </Link>
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredChatbots.map((chatbot) => (
+                    <TableRow 
+                      key={chatbot.id} 
+                      className="hover:bg-accent/50 transition-colors border-border"
+                    >
+                      <TableCell className="font-medium text-foreground">
+                        <Link 
+                          href={`/dashboard/chatbots/${chatbot.id}`}
+                          className="hover:text-primary transition-colors"
+                        >
+                          {chatbot.name}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <MessageSquare className="w-4 h-4 text-primary" />
+                          <span className="capitalize text-muted-foreground">
+                            Text
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          className={cn(
+                            "font-medium",
+                            getStatusColor(chatbot.is_active ? 'active' : 'inactive')
+                          )}
+                          variant="outline"
+                        >
+                          {chatbot.is_active ? 'active' : 'inactive'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        0
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        0
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {getRelativeTime(chatbot.created_at)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-2">
+                          <Switch 
+                            defaultChecked={chatbot.is_active} 
+                            size="sm"
+                          />
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreVertical className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+                                Actions
+                              </DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem asChild>
+                                <Link href={`/dashboard/chatbots/${chatbot.id}`} className="gap-2">
+                                  <Eye className="w-4 h-4" />
+                                  View Details
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link href={`/dashboard/chatbots/${chatbot.id}/edit`} className="gap-2">
+                                  <Edit className="w-4 h-4" />
+                                  Edit Configuration
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="gap-2">
+                                <Play className="w-4 h-4" />
+                                Test Chatbot
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-destructive gap-2">
+                                <Trash2 className="w-4 h-4" />
+                                Delete Chatbot
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
-          
-          {filteredChatbots.length === 0 && (
-            <div className="text-center py-12">
-              <Bot className="mx-auto h-12 w-12 text-muted-foreground/50" />
-              <h3 className="mt-4 text-lg font-medium text-foreground">No chatbots found</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {searchQuery ? 'No chatbots match your search criteria.' : 'Get started by creating your first chatbot.'}
-              </p>
-              {!searchQuery && (
-                <div className="mt-6">
-                  <Link href="/dashboard/chatbots/new">
-                    <Button>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create Chatbot
-                    </Button>
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>

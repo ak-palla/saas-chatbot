@@ -3,13 +3,16 @@ Document management API endpoints
 Handles document upload, processing, and management
 """
 
-from fastapi import APIRouter, HTTPException, status, Depends, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, status, UploadFile, File, Form
 from typing import List
 import io
+import logging
 
 from app.models.document import Document, DocumentUploadResponse, DocumentSearchResult
-from app.core.supabase_auth import get_current_user_supabase
 from app.services.document_service import document_service
+from app.core.database import get_supabase_admin
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -18,7 +21,7 @@ router = APIRouter()
 async def upload_document(
     chatbot_id: str = Form(...),
     file: UploadFile = File(...),
-    current_user: dict = Depends(get_current_user_supabase)
+    user_email: str = Form(...)
 ):
     """Upload and process a document for a chatbot"""
     try:
@@ -33,12 +36,32 @@ async def upload_document(
         file_content = await file.read()
         file_io = io.BytesIO(file_content)
         
+        # Get user ID from email
+        supabase = get_supabase_admin()
+        user_response = supabase.table("users").select("id").eq("email", user_email).limit(1).execute()
+        
+        if not user_response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        user_id = user_response.data[0]["id"]
+        
+        # Verify chatbot ownership
+        chatbot_response = supabase.table("chatbots").select("id").eq("id", chatbot_id).eq("user_id", user_id).execute()
+        if not chatbot_response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Chatbot not found or access denied"
+            )
+
         # Upload and process document
         result = await document_service.upload_document(
             file=file_io,
             filename=file.filename,
             chatbot_id=chatbot_id,
-            user_id=current_user["id"]
+            user_id=user_id
         )
         
         return DocumentUploadResponse(
@@ -66,13 +89,33 @@ async def upload_document(
 @router.get("/chatbot/{chatbot_id}", response_model=List[Document])
 async def list_documents(
     chatbot_id: str,
-    current_user: dict = Depends(get_current_user_supabase)
+    user_email: str
 ):
     """List all documents for a chatbot"""
     try:
+        # Get user ID from email
+        supabase = get_supabase_admin()
+        user_response = supabase.table("users").select("id").eq("email", user_email).limit(1).execute()
+        
+        if not user_response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        user_id = user_response.data[0]["id"]
+        
+        # Verify chatbot ownership
+        chatbot_response = supabase.table("chatbots").select("id").eq("id", chatbot_id).eq("user_id", user_id).execute()
+        if not chatbot_response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Chatbot not found or access denied"
+            )
+
         documents = await document_service.list_documents(
             chatbot_id=chatbot_id,
-            user_id=current_user["id"]
+            user_id=user_id
         )
         return documents
         
@@ -86,13 +129,25 @@ async def list_documents(
 @router.get("/{document_id}", response_model=Document)
 async def get_document(
     document_id: str,
-    current_user: dict = Depends(get_current_user_supabase)
+    user_email: str
 ):
     """Get a specific document"""
     try:
+        # Get user ID from email
+        supabase = get_supabase_admin()
+        user_response = supabase.table("users").select("id").eq("email", user_email).limit(1).execute()
+        
+        if not user_response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        user_id = user_response.data[0]["id"]
+        
         document = await document_service.get_document(
             document_id=document_id,
-            user_id=current_user["id"]
+            user_id=user_id
         )
         
         if not document:
@@ -115,13 +170,25 @@ async def get_document(
 @router.delete("/{document_id}")
 async def delete_document(
     document_id: str,
-    current_user: dict = Depends(get_current_user_supabase)
+    user_email: str
 ):
     """Delete a document and its embeddings"""
     try:
+        # Get user ID from email
+        supabase = get_supabase_admin()
+        user_response = supabase.table("users").select("id").eq("email", user_email).limit(1).execute()
+        
+        if not user_response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        user_id = user_response.data[0]["id"]
+        
         success = await document_service.delete_document(
             document_id=document_id,
-            user_id=current_user["id"]
+            user_id=user_id
         )
         
         if not success:
@@ -144,22 +211,31 @@ async def delete_document(
 @router.post("/search/{chatbot_id}", response_model=List[DocumentSearchResult])
 async def search_documents(
     chatbot_id: str,
+    user_email: str,
     query: str = Form(...),
-    limit: int = Form(10),
-    current_user: dict = Depends(get_current_user_supabase)
+    limit: int = Form(10)
 ):
     """Search documents by content similarity"""
     try:
         from app.services.vector_store_service import vector_store_service
         
-        # Verify chatbot ownership
-        from app.core.database import get_supabase
-        supabase = get_supabase()
+        # Get user ID from email
+        supabase = get_supabase_admin()
+        user_response = supabase.table("users").select("id").eq("email", user_email).limit(1).execute()
         
+        if not user_response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        user_id = user_response.data[0]["id"]
+        
+        # Verify chatbot ownership
         chatbot_response = supabase.table("chatbots") \
             .select("id") \
             .eq("id", chatbot_id) \
-            .eq("user_id", current_user["id"]) \
+            .eq("user_id", user_id) \
             .execute()
         
         if not chatbot_response.data:

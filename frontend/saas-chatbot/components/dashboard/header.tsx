@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, User, Settings, LogOut, Plus, Upload, Play, Bot } from 'lucide-react';
+import { Bell, User, Settings, LogOut, Plus, Upload, Play, Bot, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -18,9 +18,10 @@ import { createClient } from '@/lib/supabase/client';
 interface HeaderProps {
   title?: string;
   description?: string;
+  onStartOnboarding?: () => void;
 }
 
-export function Header({ title = "Dashboard", description }: HeaderProps) {
+export function Header({ title = "Dashboard", description, onStartOnboarding }: HeaderProps) {
   console.log('🏠 Header component is rendering!');
   const [user, setUser] = useState<any>(null);
   const supabase = createClient();
@@ -149,6 +150,12 @@ export function Header({ title = "Dashboard", description }: HeaderProps) {
               <Settings className="mr-2 h-4 w-4" />
               Settings
             </DropdownMenuItem>
+            {onStartOnboarding && (
+              <DropdownMenuItem onClick={onStartOnboarding}>
+                <HelpCircle className="mr-2 h-4 w-4" />
+                Take Tour
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />

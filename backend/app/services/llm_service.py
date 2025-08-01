@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class LLMService:
     """Service for LLM operations using ChatGroq API"""
     
-    # Available Groq models
+    # Available Groq models - updated to remove decommissioned ones
     MODELS = {
         "llama-3.1-70b-versatile": {
             "max_tokens": 8000,
@@ -30,10 +30,20 @@ class LLMService:
             "context_window": 128000,
             "description": "Fast model for quick responses"
         },
-        "mixtral-8x7b-32768": {
-            "max_tokens": 32768,
-            "context_window": 32768,
-            "description": "Balanced model for general use"
+        "llama3-8b-8192": {
+            "max_tokens": 8192,
+            "context_window": 8192,
+            "description": "Standard model for general use"
+        },
+        "llama3-70b-8192": {
+            "max_tokens": 8192,
+            "context_window": 8192,
+            "description": "Large model for complex tasks"
+        },
+        "gemma2-9b-it": {
+            "max_tokens": 8192,
+            "context_window": 8192,
+            "description": "Google Gemma 2 model"
         }
     }
     

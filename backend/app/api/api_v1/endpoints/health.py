@@ -49,3 +49,34 @@ async def database_health():
         
     except Exception as e:
         return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
+
+@router.get("/auth-test")
+async def auth_test():
+    """Test authentication and user database sync without requiring auth"""
+    from app.core.database import get_supabase_admin
+    import uuid
+    
+    logger.info("🧪 Testing database connection and user creation...")
+    
+    try:
+        supabase = get_supabase_admin()
+        
+        # Test if users table exists
+        logger.info("🔍 Testing users table access...")
+        users_test = supabase.table("users").select("id").limit(1).execute()
+        logger.info(f"👤 Users table test: {users_test}")
+        
+        return {
+            "status": "database_accessible",
+            "users_table_exists": True,
+            "sample_users": len(users_test.data) if users_test.data else 0,
+            "message": "Database connection working"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Database test failed: {str(e)}")
+        return {
+            "status": "database_error",
+            "error": str(e),
+            "message": "Database connection or table access failed"
+        }
