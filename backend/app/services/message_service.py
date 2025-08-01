@@ -345,7 +345,14 @@ class MessageService:
     ) -> Dict[str, Any]:
         """Generate response using LLM with optional RAG"""
         try:
+            print(f"🤖 RAG DEBUG: Starting LLM response generation")
+            print(f"📊 RAG DEBUG: RAG enabled: {request.use_rag}")
+            print(f"🎯 RAG DEBUG: Chatbot ID: {request.chatbot_id}")
+            print(f"💬 RAG DEBUG: User message: '{request.message}'")
+            
             if request.use_rag:
+                print(f"🔍 RAG DEBUG: RAG mode - retrieving relevant context...")
+                
                 # Retrieve relevant context
                 contexts, context_metadata = await self.vector_store_service.retrieve_relevant_context(
                     query=request.message,
@@ -353,18 +360,49 @@ class MessageService:
                     max_contexts=3
                 )
                 
-                # Generate RAG response
-                response = await self.llm_service.generate_rag_response(
-                    query=request.message,
-                    contexts=contexts,
-                    conversation_history=conversation_history,
-                    system_prompt=chatbot.get("system_prompt"),
-                    model=request.model
-                )
+                print(f"📚 RAG DEBUG: Retrieved {len(contexts)} context chunks")
+                if contexts:
+                    for i, context in enumerate(contexts):
+                        print(f"📄 RAG DEBUG: Context {i+1} preview: {context[:150]}...")
+                        print(f"📊 RAG DEBUG: Context {i+1} metadata: {context_metadata[i] if i < len(context_metadata) else 'N/A'}")
+                else:
+                    print(f"⚠️ RAG DEBUG: No relevant context found - falling back to standard response")
                 
-                response["context_count"] = len(contexts)
-                return response
+                if contexts:
+                    print(f"🧠 RAG DEBUG: Generating RAG-enhanced response with context...")
+                    # Generate RAG response
+                    response = await self.llm_service.generate_rag_response(
+                        query=request.message,
+                        contexts=contexts,
+                        conversation_history=conversation_history,
+                        system_prompt=chatbot.get("system_prompt"),
+                        model=request.model
+                    )
+                    
+                    response["context_count"] = len(contexts)
+                    response["rag_enabled"] = True
+                    print(f"✅ RAG DEBUG: RAG response generated successfully with {len(contexts)} contexts")
+                    return response
+                else:
+                    print(f"🔄 RAG DEBUG: No context available, generating standard response...")
+                    # Fall back to standard response
+                    messages = conversation_history + [{"role": "user", "content": request.message}]
+                    
+                    response = await self.llm_service.generate_response(
+                        messages=messages,
+                        model=request.model,
+                        temperature=request.temperature,
+                        max_tokens=request.max_tokens,
+                        system_prompt=chatbot.get("system_prompt")
+                    )
+                    
+                    response["rag_enabled"] = False
+                    response["context_count"] = 0
+                    print(f"✅ RAG DEBUG: Standard response generated (no context available)")
+                    return response
             else:
+                print(f"🔄 RAG DEBUG: Standard mode - generating response without RAG...")
+                
                 # Generate standard response
                 messages = conversation_history + [{"role": "user", "content": request.message}]
                 
@@ -378,9 +416,11 @@ class MessageService:
                 
                 response["rag_enabled"] = False
                 response["context_count"] = 0
+                print(f"✅ RAG DEBUG: Standard response generated")
                 return response
                 
         except Exception as e:
+            print(f"💥 RAG DEBUG: LLM response generation FAILED: {str(e)}")
             logger.error(f"LLM response failed: {str(e)}")
             raise
     

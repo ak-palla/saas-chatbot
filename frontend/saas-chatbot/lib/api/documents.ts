@@ -77,7 +77,7 @@ class DocumentService {
 
   async getDocuments(chatbotId?: string): Promise<Document[]> {
     const url = chatbotId 
-      ? `/api/v1/documents?chatbot_id=${chatbotId}` 
+      ? `/api/v1/documents/chatbot/${chatbotId}` 
       : '/api/v1/documents';
     return this.fetchWithAuth(url);
   }
@@ -123,6 +123,17 @@ class DocumentService {
     return this.fetchWithAuth(`/api/v1/documents/${id}`, {
       method: 'DELETE',
     });
+  }
+
+  async processDocuments(chatbotId: string): Promise<{message: string, processed_count: number, total_embeddings: number, success: boolean}> {
+    console.log('🧠 RAG DEBUG: Triggering document processing for chatbot:', chatbotId);
+    
+    const result = await this.fetchWithAuth(`/api/v1/documents/process/${chatbotId}`, {
+      method: 'POST',
+    });
+    
+    console.log('✅ RAG DEBUG: Document processing completed:', result);
+    return result;
   }
 
   async reprocessDocument(id: string): Promise<Document> {

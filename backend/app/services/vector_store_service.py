@@ -86,10 +86,16 @@ class VectorStoreService:
             Tuple of (context_texts, source_metadata)
         """
         try:
+            print(f"🔍 RAG DEBUG: Starting context retrieval for query: '{query}'")
+            print(f"📋 RAG DEBUG: Chatbot ID: {chatbot_id}, Max contexts: {max_contexts}, Threshold: {similarity_threshold}")
+            
             # Generate embedding for the query
+            print(f"🧠 RAG DEBUG: Generating query embedding...")
             query_embedding = await self.embedding_service.generate_embedding(query)
+            print(f"✅ RAG DEBUG: Query embedding generated (dimension: {len(query_embedding)})")
             
             # Perform similarity search
+            print(f"🔎 RAG DEBUG: Performing similarity search in vector database...")
             similar_chunks = await self.embedding_service.similarity_search(
                 query_embedding=query_embedding,
                 chatbot_id=chatbot_id,
@@ -97,7 +103,10 @@ class VectorStoreService:
                 similarity_threshold=similarity_threshold
             )
             
+            print(f"📊 RAG DEBUG: Similarity search returned {len(similar_chunks)} chunks")
+            
             if not similar_chunks:
+                print(f"⚠️ RAG DEBUG: No relevant context found for query in chatbot {chatbot_id}")
                 logger.info(f"No relevant context found for query in chatbot {chatbot_id}")
                 return [], []
             
@@ -105,7 +114,10 @@ class VectorStoreService:
             contexts = []
             metadata = []
             
-            for chunk in similar_chunks:
+            for i, chunk in enumerate(similar_chunks):
+                print(f"📝 RAG DEBUG: Processing chunk {i+1}: similarity={chunk.get('similarity', 'N/A'):.4f}")
+                print(f"📄 RAG DEBUG: Chunk content preview: {chunk['content'][:100]}...")
+                
                 contexts.append(chunk['content'])
                 metadata.append({
                     'document_id': chunk.get('document_id'),
@@ -113,10 +125,15 @@ class VectorStoreService:
                     'metadata': chunk.get('metadata', {})
                 })
             
+            print(f"🎯 RAG DEBUG: Context retrieval complete - {len(contexts)} contexts retrieved")
+            for i, context in enumerate(contexts):
+                print(f"📖 RAG DEBUG: Context {i+1} length: {len(context)} chars")
+            
             logger.info(f"Retrieved {len(contexts)} relevant contexts for query")
             return contexts, metadata
             
         except Exception as e:
+            print(f"💥 RAG DEBUG: Context retrieval FAILED: {str(e)}")
             logger.error(f"Context retrieval failed: {str(e)}")
             return [], []
     

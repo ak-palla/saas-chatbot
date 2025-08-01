@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { MessageSquare, Send, Bot, User, RotateCcw } from 'lucide-react';
+import { MessageSquare, Send, Bot, User, RotateCcw, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { apiService, TestChatMessage } from '@/lib/api';
 
@@ -32,7 +32,12 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+  const synthRef = useRef<SpeechSynthesis | null>(null);
 
   useEffect(() => {
     // Scroll to bottom when new messages are added
@@ -43,6 +48,428 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
       }
     }
   }, [messages]);
+
+  useEffect(() => {
+    // Initialize voice functionality based on chatbot settings
+    console.log('🔍 VOICE DEBUG: ==================== CHATBOT ANALYSIS ====================');
+    console.log('🔍 VOICE DEBUG: Checking chatbot voice settings...');
+    console.log('🔍 VOICE DEBUG: Full chatbot object:', JSON.stringify(chatbot, null, 2));
+    console.log('🔍 VOICE DEBUG: chatbot exists:', !!chatbot);
+    console.log('🔍 VOICE DEBUG: chatbot.id:', chatbot?.id);
+    console.log('🔍 VOICE DEBUG: behavior_config exists:', !!chatbot?.behavior_config);
+    console.log('🔍 VOICE DEBUG: behavior_config type:', typeof chatbot?.behavior_config);
+    console.log('🔍 VOICE DEBUG: behavior_config content:', JSON.stringify(chatbot?.behavior_config, null, 2));
+    console.log('🔍 VOICE DEBUG: enableVoice value:', chatbot?.behavior_config?.enableVoice);
+    console.log('🔍 VOICE DEBUG: enableVoice type:', typeof chatbot?.behavior_config?.enableVoice);
+    console.log('🔍 VOICE DEBUG: ===================================================');
+    
+    const isVoiceEnabled = chatbot?.behavior_config?.enableVoice || false;
+    console.log('🔍 VOICE DEBUG: Final isVoiceEnabled:', isVoiceEnabled);
+    
+    setVoiceEnabled(isVoiceEnabled);
+    
+    if (isVoiceEnabled) {
+      console.log('🎤 VOICE DEBUG: Voice chat enabled for this chatbot - initializing services');
+      initializeVoiceServices();
+    } else {
+      console.log('🔇 VOICE DEBUG: Voice chat disabled for this chatbot');
+      console.log('🔍 VOICE DEBUG: Possible reasons:');
+      console.log('  - behavior_config is null/undefined:', !chatbot?.behavior_config);
+      console.log('  - enableVoice is false:', chatbot?.behavior_config?.enableVoice === false);
+      console.log('  - enableVoice is undefined:', chatbot?.behavior_config?.enableVoice === undefined);
+    }
+  }, [chatbot]);
+
+  const initializeVoiceServices = () => {
+    console.log('🔧 VOICE DEBUG: Starting voice services initialization...');
+    
+    try {
+      // Initialize Speech Recognition
+      console.log('🔍 VOICE DEBUG: Checking for Speech Recognition API...');
+      console.log('🔍 VOICE DEBUG: webkitSpeechRecognition available:', 'webkitSpeechRecognition' in window);
+      console.log('🔍 VOICE DEBUG: SpeechRecognition available:', 'SpeechRecognition' in window);
+      
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = false;
+        recognitionRef.current.interimResults = false;
+        recognitionRef.current.lang = 'en-US';
+
+        console.log('✅ VOICE DEBUG: Speech Recognition initialized with settings:', {
+          continuous: recognitionRef.current.continuous,
+          interimResults: recognitionRef.current.interimResults,
+          lang: recognitionRef.current.lang
+        });
+
+        recognitionRef.current.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          const confidence = event.results[0][0].confidence;
+          console.log('🎤 VOICE DEBUG: Speech recognized:', {
+            transcript,
+            confidence,
+            resultsLength: event.results.length
+          });
+          
+          setInputValue(transcript);
+          setIsListening(false);
+          
+          // Auto-send the message after a short delay to allow user to see the transcript
+          setTimeout(() => {
+            if (transcript.trim()) {
+              console.log('🎤 VOICE DEBUG: Auto-sending voice message after delay:', transcript);
+              sendVoiceMessage(transcript);
+            }
+          }, 500);
+        };
+
+        recognitionRef.current.onerror = (event: any) => {
+          console.error('🎤 VOICE DEBUG: Speech recognition error:', {
+            error: event.error,
+            message: event.message,
+            type: event.type
+          });
+          setIsListening(false);
+          toast({
+            title: "Voice Input Error",
+            description: `Failed to recognize speech: ${event.error}. Please try again.`,
+            variant: "destructive",
+          });
+        };
+
+        recognitionRef.current.onstart = () => {
+          console.log('🎤 VOICE DEBUG: Speech recognition started');
+        };
+
+        recognitionRef.current.onend = () => {
+          console.log('🎤 VOICE DEBUG: Speech recognition ended');
+          setIsListening(false);
+        };
+      } else {
+        console.error('🎤 VOICE DEBUG: Speech Recognition API not available in this browser');
+        toast({
+          title: "Voice Input Not Supported",
+          description: "Your browser doesn't support speech recognition.",
+          variant: "destructive",
+        });
+      }
+
+      // Initialize Speech Synthesis
+      console.log('🔍 VOICE DEBUG: Checking for Speech Synthesis API...');
+      console.log('🔍 VOICE DEBUG: speechSynthesis available:', 'speechSynthesis' in window);
+      
+      if ('speechSynthesis' in window) {
+        synthRef.current = window.speechSynthesis;
+        console.log('✅ VOICE DEBUG: Speech Synthesis initialized');
+        
+        // Log available voices
+        const voices = synthRef.current.getVoices();
+        console.log('🔍 VOICE DEBUG: Available voices:', voices.length);
+        if (voices.length === 0) {
+          // Voices might not be loaded yet, try after a delay
+          setTimeout(() => {
+            const delayedVoices = synthRef.current?.getVoices() || [];
+            console.log('🔍 VOICE DEBUG: Available voices (delayed):', delayedVoices.length);
+            delayedVoices.slice(0, 5).forEach((voice, i) => {
+              console.log(`  ${i + 1}. ${voice.name} (${voice.lang}) - ${voice.localService ? 'Local' : 'Remote'}`);
+            });
+          }, 1000);
+        } else {
+          voices.slice(0, 5).forEach((voice, i) => {
+            console.log(`  ${i + 1}. ${voice.name} (${voice.lang}) - ${voice.localService ? 'Local' : 'Remote'}`);
+          });
+        }
+      } else {
+        console.error('🔊 VOICE DEBUG: Speech Synthesis API not available in this browser');
+        toast({
+          title: "Voice Output Not Supported",
+          description: "Your browser doesn't support speech synthesis.",
+          variant: "destructive",
+        });
+      }
+
+      console.log('✅ VOICE DEBUG: Voice services initialization completed');
+    } catch (error) {
+      console.error('💥 VOICE DEBUG: Failed to initialize voice services:', error);
+      toast({
+        title: "Voice Services Error",
+        description: "Failed to initialize voice services. Check console for details.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const startListening = () => {
+    console.log('🎤 VOICE DEBUG: startListening called');
+    console.log('🔍 VOICE DEBUG: recognitionRef.current exists:', !!recognitionRef.current);
+    console.log('🔍 VOICE DEBUG: voiceEnabled:', voiceEnabled);
+    
+    if (!recognitionRef.current || !voiceEnabled) {
+      console.warn('⚠️ VOICE DEBUG: Cannot start listening - missing requirements:', {
+        hasRecognition: !!recognitionRef.current,
+        voiceEnabled
+      });
+      return;
+    }
+    
+    try {
+      console.log('🎤 VOICE DEBUG: Setting isListening to true and starting recognition...');
+      setIsListening(true);
+      recognitionRef.current.start();
+      console.log('✅ VOICE DEBUG: Speech recognition start() called successfully');
+    } catch (error) {
+      console.error('💥 VOICE DEBUG: Failed to start listening:', error);
+      setIsListening(false);
+      toast({
+        title: "Voice Input Error",
+        description: "Failed to start voice input. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopListening = () => {
+    console.log('🎤 VOICE DEBUG: stopListening called');
+    
+    if (!recognitionRef.current) {
+      console.warn('⚠️ VOICE DEBUG: Cannot stop listening - no recognition ref');
+      return;
+    }
+    
+    try {
+      console.log('🎤 VOICE DEBUG: Stopping recognition and setting isListening to false...');
+      recognitionRef.current.stop();
+      setIsListening(false);
+      console.log('✅ VOICE DEBUG: Speech recognition stopped successfully');
+    } catch (error) {
+      console.error('💥 VOICE DEBUG: Failed to stop listening:', error);
+    }
+  };
+
+  const speakResponse = (text: string) => {
+    console.log('🔊 VOICE DEBUG: speakResponse called with text:', text?.substring(0, 100) + '...');
+    console.log('🔍 VOICE DEBUG: synthRef.current exists:', !!synthRef.current);
+    console.log('🔍 VOICE DEBUG: voiceEnabled:', voiceEnabled);
+    console.log('🔍 VOICE DEBUG: text length:', text?.length);
+
+    if (!synthRef.current || !voiceEnabled) {
+      console.warn('⚠️ VOICE DEBUG: Cannot speak - missing requirements:', {
+        hasSynth: !!synthRef.current,
+        voiceEnabled,
+        hasText: !!text
+      });
+      return;
+    }
+
+    if (!text || !text.trim()) {
+      console.warn('⚠️ VOICE DEBUG: Cannot speak - empty text');
+      return;
+    }
+
+    try {
+      console.log('🔊 VOICE DEBUG: Canceling any ongoing speech...');
+      synthRef.current.cancel();
+      
+      console.log('🔊 VOICE DEBUG: Creating speech utterance...');
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+      
+      console.log('🔊 VOICE DEBUG: Utterance created with settings:', {
+        rate: utterance.rate,
+        pitch: utterance.pitch,
+        volume: utterance.volume,
+        lang: utterance.lang,
+        voice: utterance.voice?.name
+      });
+      
+      utterance.onstart = () => {
+        setIsSpeaking(true);
+        console.log('🔊 VOICE DEBUG: ✅ Speech synthesis STARTED - utterance.onstart fired');
+      };
+      
+      utterance.onend = () => {
+        setIsSpeaking(false);
+        console.log('🔊 VOICE DEBUG: ✅ Speech synthesis ENDED - utterance.onend fired');
+      };
+      
+      utterance.onerror = (event) => {
+        setIsSpeaking(false);
+        console.error('💥 VOICE DEBUG: Speech synthesis ERROR:', {
+          error: event.error,
+          type: event.type,
+          charIndex: event.charIndex,
+          elapsedTime: event.elapsedTime
+        });
+      };
+
+      utterance.onpause = () => {
+        console.log('⏸️ VOICE DEBUG: Speech synthesis PAUSED');
+      };
+
+      utterance.onresume = () => {
+        console.log('▶️ VOICE DEBUG: Speech synthesis RESUMED');
+      };
+
+      utterance.onboundary = (event) => {
+        console.log('🔊 VOICE DEBUG: Speech boundary event:', {
+          name: event.name,
+          charIndex: event.charIndex,
+          elapsedTime: event.elapsedTime
+        });
+      };
+
+      console.log('🔊 VOICE DEBUG: Calling synthRef.current.speak()...');
+      synthRef.current.speak(utterance);
+      console.log('🔊 VOICE DEBUG: ✅ synthRef.current.speak() called successfully');
+      
+      // Additional debug info
+      setTimeout(() => {
+        console.log('🔊 VOICE DEBUG: Speech status after 100ms:', {
+          speaking: synthRef.current?.speaking,
+          pending: synthRef.current?.pending,
+          paused: synthRef.current?.paused,
+          isSpeaking: isSpeaking
+        });
+      }, 100);
+      
+    } catch (error) {
+      console.error('💥 VOICE DEBUG: Failed to speak response:', error);
+      setIsSpeaking(false);
+      toast({
+        title: "Voice Output Error",
+        description: "Failed to speak response. Check console for details.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopSpeaking = () => {
+    console.log('🔊 VOICE DEBUG: stopSpeaking called');
+    
+    if (!synthRef.current) {
+      console.warn('⚠️ VOICE DEBUG: Cannot stop speaking - no synth ref');
+      return;
+    }
+    
+    try {
+      console.log('🔊 VOICE DEBUG: Canceling speech synthesis...');
+      synthRef.current.cancel();
+      setIsSpeaking(false);
+      console.log('✅ VOICE DEBUG: Speech synthesis stopped successfully');
+    } catch (error) {
+      console.error('💥 VOICE DEBUG: Failed to stop speaking:', error);
+    }
+  };
+
+  const sendVoiceMessage = async (message: string) => {
+    console.log('🎤 VOICE DEBUG: sendVoiceMessage called with:', message);
+    console.log('🔍 VOICE DEBUG: Current state check:', {
+      messageLength: message?.length,
+      isLoading,
+      chatbotId: chatbot?.id,
+      voiceEnabled
+    });
+
+    if (!message.trim() || isLoading || !chatbot?.id) {
+      console.warn('⚠️ VOICE DEBUG: Cannot send voice message - requirements not met:', {
+        hasMessage: !!message.trim(),
+        isLoading,
+        hasChatbotId: !!chatbot?.id
+      });
+      return;
+    }
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: message,
+      timestamp: new Date(),
+    };
+
+    console.log('🎤 VOICE DEBUG: Adding user message to chat:', userMessage);
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue('');
+    setIsLoading(true);
+
+    try {
+      console.log('🎤 VOICE DEBUG: Sending voice message to chatbot:', chatbot.id);
+      
+      // Convert messages to API format
+      const conversationHistory: TestChatMessage[] = messages.map(msg => ({
+        role: msg.role === 'bot' ? 'assistant' : msg.role,
+        content: msg.content
+      }));
+
+      console.log('📡 VOICE DEBUG: Conversation history prepared:', {
+        historyLength: conversationHistory.length,
+        lastMessages: conversationHistory.slice(-2)
+      });
+
+      // Call real API
+      console.log('📡 VOICE DEBUG: Calling testChatbot API with voice message...');
+      
+      const response = await apiService.testChatbot(chatbot.id, {
+        message: message,
+        conversation_history: conversationHistory,
+      });
+
+      console.log('🎯 VOICE DEBUG: Got chatbot response for voice:', {
+        hasResponse: !!response?.response,
+        responseLength: response?.response?.length || 0,
+        ragEnabled: response?.rag_enabled,
+        contextCount: response?.context_count || 0,
+        model: response?.model,
+        fullResponse: response
+      });
+      
+      if (!response || !response.response) {
+        throw new Error('Invalid response from chatbot API');
+      }
+      
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'bot',
+        content: response.response,
+        timestamp: new Date(),
+      };
+
+      console.log('🎤 VOICE DEBUG: Adding bot response to chat:', botMessage);
+      setMessages(prev => [...prev, botMessage]);
+
+      // Always trigger voice response for voice messages
+      console.log('🔊 VOICE DEBUG: 🎯 CRITICAL: About to call speakResponse for voice input');
+      console.log('🔊 VOICE DEBUG: Response text to speak:', response.response?.substring(0, 100) + '...');
+      console.log('🔊 VOICE DEBUG: Current voiceEnabled state:', voiceEnabled);
+      console.log('🔊 VOICE DEBUG: synthRef.current exists:', !!synthRef.current);
+      
+      speakResponse(response.response);
+      
+      console.log('🔊 VOICE DEBUG: ✅ speakResponse called for voice message');
+    } catch (error) {
+      console.error('❌ VOICE DEBUG: Voice chat error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send voice message';
+      
+      toast({
+        title: "Voice Chat Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+
+      // Add error message to chat
+      const errorBotMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'bot',
+        content: `❌ Voice Error: ${errorMessage}. Please try again.`,
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorBotMessage]);
+    } finally {
+      console.log('🎤 VOICE DEBUG: Voice message processing completed, setting isLoading to false');
+      setIsLoading(false);
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading || !chatbot?.id) return;
@@ -69,13 +496,23 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
       }));
 
       // Call real API
-      console.log('📡 Calling testChatbot API...');
+      console.log('📡 RAG DEBUG: Calling testChatbot API with message:', currentInput);
+      console.log('💬 RAG DEBUG: Conversation history length:', conversationHistory.length);
+      
       const response = await apiService.testChatbot(chatbot.id, {
         message: currentInput,
         conversation_history: conversationHistory,
       });
 
-      console.log('✅ Got chatbot response:', response);
+      console.log('🎯 RAG DEBUG: Got chatbot response:', {
+        hasResponse: !!response?.response,
+        responseLength: response?.response?.length || 0,
+        ragEnabled: response?.rag_enabled,
+        contextCount: response?.context_count || 0,
+        model: response?.model,
+        fullResponse: response
+      });
+      
       if (!response || !response.response) {
         throw new Error('Invalid response from chatbot API');
       }
@@ -88,6 +525,22 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
       };
 
       setMessages(prev => [...prev, botMessage]);
+
+      // Trigger voice response if voice is enabled
+      if (voiceEnabled && response.response) {
+        console.log('🔊 VOICE DEBUG: 🎯 CRITICAL: Voice enabled for text message, triggering speech synthesis');
+        console.log('🔊 VOICE DEBUG: Text message response to speak:', response.response?.substring(0, 100) + '...');
+        console.log('🔊 VOICE DEBUG: Current voiceEnabled state:', voiceEnabled);
+        console.log('🔊 VOICE DEBUG: synthRef.current exists:', !!synthRef.current);
+        speakResponse(response.response);
+        console.log('🔊 VOICE DEBUG: ✅ speakResponse called for text message');
+      } else {
+        console.log('🔊 VOICE DEBUG: NOT triggering speech synthesis for text message:', {
+          voiceEnabled,
+          hasResponse: !!response.response,
+          responseLength: response.response?.length
+        });
+      }
     } catch (error) {
       console.error('❌ Test chat error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
@@ -213,10 +666,35 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Type your message..."
+                  placeholder={voiceEnabled ? "Type or click mic to speak..." : "Type your message..."}
                   disabled={isLoading}
                   className="flex-1"
                 />
+                
+                {voiceEnabled && (
+                  <>
+                    <Button
+                      onClick={isListening ? stopListening : startListening}
+                      disabled={isLoading || isSpeaking}
+                      size="sm"
+                      variant={isListening ? "destructive" : "outline"}
+                      className={isListening ? "animate-pulse" : ""}
+                    >
+                      {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    </Button>
+                    
+                    <Button
+                      onClick={isSpeaking ? stopSpeaking : undefined}
+                      disabled={!isSpeaking}
+                      size="sm"
+                      variant={isSpeaking ? "destructive" : "outline"}
+                      className={isSpeaking ? "animate-pulse" : ""}
+                    >
+                      {isSpeaking ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                    </Button>
+                  </>
+                )}
+                
                 <Button
                   onClick={handleSendMessage}
                   disabled={!inputValue.trim() || isLoading}
@@ -225,6 +703,14 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
+              
+              {voiceEnabled && (
+                <div className="mt-2 text-xs text-muted-foreground text-center">
+                  {isListening && "🎤 Listening... Speak now"}
+                  {isSpeaking && "🔊 Bot is speaking..."}
+                  {!isListening && !isSpeaking && "Voice chat enabled - Click mic to speak"}
+                </div>
+              )}
             </div>
           </div>
         </CardContent>

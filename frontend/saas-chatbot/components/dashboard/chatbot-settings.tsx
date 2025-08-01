@@ -9,17 +9,32 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, Bot, Palette, Save, AlertTriangle } from 'lucide-react';
+import { Settings, Bot, Palette, Save, AlertTriangle, FileText, Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { apiService } from '@/lib/api';
+import { documentService } from '@/lib/api/documents';
+import { useDropzone } from 'react-dropzone';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 
 interface ChatbotSettingsProps {
   chatbot: any;
 }
 
+interface UploadFile {
+  file: File;
+  status: 'pending' | 'uploading' | 'success' | 'error';
+  progress: number;
+  error?: string;
+}
+
 export function ChatbotSettings({ chatbot }: ChatbotSettingsProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [uploadFiles, setUploadFiles] = useState<UploadFile[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
   
   const [settings, setSettings] = useState({
     name: chatbot?.name || '',
@@ -46,9 +61,47 @@ export function ChatbotSettings({ chatbot }: ChatbotSettingsProps) {
     }
   });
 
+  const loadDocuments = async () => {
+    if (!chatbot?.id) return;
+    
+    console.log('📚 RAG DEBUG: Loading documents for chatbot:', chatbot.id);
+    setIsLoadingDocuments(true);
+    try {
+      const docs = await documentService.getDocuments(chatbot.id);
+      console.log('✅ RAG DEBUG: Documents loaded successfully:', {
+        count: docs?.length || 0,
+        documents: docs?.map(d => ({ 
+          id: d.id, 
+          filename: d.filename, 
+          processed: d.processed, 
+          fileType: d.file_type 
+        })) || []
+      });
+      setDocuments(docs);
+    } catch (error) {
+      console.error('💥 RAG DEBUG: Failed to load documents:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load documents",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingDocuments(false);
+    }
+  };
+
   const handleSave = async () => {
     setIsLoading(true);
     try {
+      console.log('💾 VOICE DEBUG: ==================== SAVING SETTINGS ====================');
+      console.log('💾 VOICE DEBUG: Saving chatbot settings...');
+      console.log('💾 VOICE DEBUG: Current settings state:', JSON.stringify(settings, null, 2));
+      console.log('💾 VOICE DEBUG: Voice settings specifically:', {
+        enableVoice: settings.behavior_config.enableVoice,
+        behaviorConfigExists: !!settings.behavior_config,
+        fullBehaviorConfig: settings.behavior_config
+      });
+      
       // Update chatbot settings via API
       const updateData = {
         name: settings.name,
@@ -60,14 +113,22 @@ export function ChatbotSettings({ chatbot }: ChatbotSettingsProps) {
         behavior_config: settings.behavior_config
       };
 
-      await apiService.updateChatbot(chatbot.id, updateData);
+      console.log('💾 VOICE DEBUG: Update data being sent to backend:', JSON.stringify(updateData, null, 2));
+      console.log('💾 VOICE DEBUG: behavior_config in update data:', updateData.behavior_config);
+      console.log('💾 VOICE DEBUG: enableVoice in update data:', updateData.behavior_config?.enableVoice);
+
+      console.log('📡 VOICE DEBUG: Sending update request to backend...');
+      const response = await apiService.updateChatbot(chatbot.id, updateData);
+      console.log('✅ VOICE DEBUG: Settings saved successfully');
+      console.log('✅ VOICE DEBUG: Backend response:', response);
       
       toast({
         title: "Settings Updated",
         description: "Your chatbot settings have been saved successfully.",
       });
+      
     } catch (error) {
-      console.error('❌ Settings save error:', error);
+      console.error('💥 RAG DEBUG: Settings save error:', error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to update settings. Please try again.",
@@ -78,10 +139,186 @@ export function ChatbotSettings({ chatbot }: ChatbotSettingsProps) {
     }
   };
 
+  const onDrop = (acceptedFiles: File[]) => {
+    const newFiles = acceptedFiles.map(file => ({
+      file,
+      status: 'pending' as const,
+      progress: 0,
+    }));
+    setUploadFiles(prev => [...prev, ...newFiles]);
+  };
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'text/plain': ['.txt'],
+      'text/markdown': ['.md'],
+      'application/pdf': ['.pdf'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+    },
+    maxSize: 10 * 1024 * 1024, // 10MB
+  });
+
+  const removeFile = (index: number) => {
+    setUploadFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUploadFiles = async () => {
+    if (uploadFiles.length === 0 || !chatbot?.id) return;
+
+    console.log('🚀 RAG DEBUG: Starting file upload process', {
+      fileCount: uploadFiles.length,
+      chatbotId: chatbot.id,
+      files: uploadFiles.map(f => ({ name: f.file.name, size: f.file.size, type: f.file.type }))
+    });
+
+    setIsUploading(true);
+    
+    for (let i = 0; i < uploadFiles.length; i++) {
+      const uploadFile = uploadFiles[i];
+      
+      console.log(`📁 RAG DEBUG: Processing file ${i + 1}/${uploadFiles.length}: ${uploadFile.file.name}`);
+      
+      setUploadFiles(prev => 
+        prev.map((file, index) => 
+          index === i ? { ...file, status: 'uploading' } : file
+        )
+      );
+
+      try {
+        console.log(`⬆️ RAG DEBUG: Uploading ${uploadFile.file.name} to backend...`);
+        
+        const result = await documentService.uploadDocument({
+          file: uploadFile.file,
+          chatbot_id: chatbot.id,
+        });
+
+        console.log(`✅ RAG DEBUG: Upload successful for ${uploadFile.file.name}`, result);
+
+        setUploadFiles(prev => 
+          prev.map((file, index) => 
+            index === i ? { ...file, status: 'success', progress: 100 } : file
+          )
+        );
+        
+        console.log(`🔄 RAG DEBUG: Reloading documents list after successful upload...`);
+        // Reload documents after successful upload
+        await loadDocuments();
+        console.log(`✅ RAG DEBUG: Documents list reloaded`);
+      } catch (error) {
+        console.error(`💥 RAG DEBUG: Upload failed for ${uploadFile.file.name}:`, error);
+        
+        setUploadFiles(prev => 
+          prev.map((file, index) => 
+            index === i ? { 
+              ...file, 
+              status: 'error', 
+              error: error instanceof Error ? error.message : 'Upload failed' 
+            } : file
+          )
+        );
+      }
+    }
+
+    console.log('🎉 RAG DEBUG: File upload process completed');
+    
+    // Trigger embedding generation for all uploaded documents
+    if (uploadFiles.some(file => file.status === 'success') && chatbot?.id) {
+      console.log('🧠 RAG DEBUG: Triggering embedding generation for uploaded documents...');
+      try {
+        const processingResult = await documentService.processDocuments(chatbot.id);
+        console.log('✅ RAG DEBUG: Embedding generation completed:', processingResult);
+        
+        if (processingResult.success && processingResult.processed_count > 0) {
+          toast({
+            title: "Documents Processed",
+            description: `Successfully processed ${processingResult.processed_count} documents with ${processingResult.total_embeddings} embeddings generated.`,
+          });
+        }
+        
+        // Reload documents to show updated processing status
+        await loadDocuments();
+      } catch (error) {
+        console.error('💥 RAG DEBUG: Embedding generation failed:', error);
+        toast({
+          title: "Processing Warning",
+          description: "Documents uploaded but embedding generation failed. You can retry later.",
+          variant: "destructive",
+        });
+      }
+    }
+    
+    setIsUploading(false);
+    
+    // Clear successful uploads after delay
+    setTimeout(() => {
+      setUploadFiles(prev => prev.filter(file => file.status !== 'success'));
+    }, 3000);
+  };
+
+  const handleDeleteDocument = async (documentId: string) => {
+    try {
+      await documentService.deleteDocument(documentId);
+      toast({
+        title: "Document Deleted",
+        description: "Document has been removed successfully.",
+      });
+      await loadDocuments();
+    } catch (error) {
+      console.error('❌ Failed to delete document:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete document",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getStatusIcon = (status: UploadFile['status']) => {
+    switch (status) {
+      case 'uploading':
+        return <Upload className="h-4 w-4 animate-spin" />;
+      case 'success':
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'error':
+        return <AlertCircle className="h-4 w-4 text-red-600" />;
+      default:
+        return <FileText className="h-4 w-4" />;
+    }
+  };
+
+  const getStatusBadge = (status: UploadFile['status']) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="secondary">Pending</Badge>;
+      case 'uploading':
+        return <Badge variant="outline">Uploading</Badge>;
+      case 'success':
+        return <Badge variant="default">Complete</Badge>;
+      case 'error':
+        return <Badge variant="destructive">Error</Badge>;
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  // Load documents when component mounts or chatbot changes
+  useState(() => {
+    if (chatbot?.id) {
+      loadDocuments();
+    }
+  });
+
   return (
     <div className="space-y-6">
       <Tabs defaultValue="general" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="general" className="flex items-center gap-2">
             <Bot className="h-4 w-4" />
             General
@@ -93,6 +330,10 @@ export function ChatbotSettings({ chatbot }: ChatbotSettingsProps) {
           <TabsTrigger value="appearance" className="flex items-center gap-2">
             <Palette className="h-4 w-4" />
             Appearance
+          </TabsTrigger>
+          <TabsTrigger value="documents" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Documents
           </TabsTrigger>
         </TabsList>
 
@@ -409,6 +650,130 @@ export function ChatbotSettings({ chatbot }: ChatbotSettingsProps) {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="documents" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Document Management</CardTitle>
+              <CardDescription>
+                Upload and manage documents for your chatbot's knowledge base.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Upload Area */}
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Upload Documents</Label>
+                <div
+                  {...getRootProps()}
+                  className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 transition-colors"
+                >
+                  <input {...getInputProps()} />
+                  <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                  <div>
+                    <p className="text-lg font-medium">
+                      {isDragActive ? 'Drop files here' : 'Drop files or click to select'}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Supports: PDF, TXT, MD, DOCX (max 10MB)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Upload Queue */}
+              {uploadFiles.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-medium">Upload Queue ({uploadFiles.length})</h4>
+                  <div className="space-y-2">
+                    {uploadFiles.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div>{getStatusIcon(file.status)}</div>
+                          <div>
+                            <p className="font-medium text-sm">{file.file.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {formatFileSize(file.file.size)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {getStatusBadge(file.status)}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeFile(index)}
+                            disabled={file.status === 'uploading'}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <Button 
+                    onClick={handleUploadFiles}
+                    disabled={uploadFiles.length === 0 || isUploading}
+                    className="w-full"
+                  >
+                    {isUploading ? 'Uploading...' : `Upload ${uploadFiles.length} file${uploadFiles.length > 1 ? 's' : ''}`}
+                  </Button>
+                </div>
+              )}
+
+              {/* Existing Documents */}
+              <div className="space-y-3">
+                <h4 className="font-medium">Uploaded Documents</h4>
+                {isLoadingDocuments ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                    <p className="text-sm text-muted-foreground mt-2">Loading documents...</p>
+                  </div>
+                ) : documents.length > 0 ? (
+                  <div className="space-y-2">
+                    {documents.map((doc) => (
+                      <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <FileText className="h-5 w-5 text-gray-500" />
+                          <div>
+                            <p className="font-medium text-sm">{doc.filename}</p>
+                            <div className="flex items-center space-x-3 text-xs text-muted-foreground">
+                              <span>{doc.file_type?.toUpperCase()}</span>
+                              <span>{formatFileSize(doc.file_size || 0)}</span>
+                              <span>
+                                {doc.processed ? (
+                                  <span className="text-green-600">✓ Processed</span>
+                                ) : (
+                                  <span className="text-yellow-600">Processing...</span>
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteDocument(doc.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 border rounded-lg">
+                    <FileText className="mx-auto h-12 w-12 text-gray-400 mb-3" />
+                    <p className="text-sm text-muted-foreground">No documents uploaded yet</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Upload documents to build your chatbot's knowledge base
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
       </Tabs>
 
       <div className="flex justify-end space-x-2 pt-4 border-t">

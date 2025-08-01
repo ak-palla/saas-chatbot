@@ -120,29 +120,42 @@ class EmbeddingService:
             List of float values representing the embedding vector
         """
         try:
+            print(f"🧠 RAG DEBUG: Generating embedding for text (length: {len(text)} chars)")
+            print(f"🔧 RAG DEBUG: Using model: {self.current_model_name}")
+            
             # Clean and prepare text
             text = self._prepare_text(text)
+            print(f"✂️ RAG DEBUG: Text prepared (cleaned length: {len(text)} chars)")
             
             # Switch model if requested
             if model_name and model_name != self.current_model_name:
+                print(f"🔄 RAG DEBUG: Switching to model: {model_name}")
                 self._load_model(model_name)
             
             # Generate embedding
             if self.model is not None:
+                print(f"✅ RAG DEBUG: Using actual model for embedding generation")
                 # Use actual model
                 embedding = self.model.encode([text], show_progress_bar=False)[0]
                 embedding = embedding.tolist()  # Convert numpy array to list
+                print(f"🎯 RAG DEBUG: Real embedding generated - dimension: {len(embedding)}")
             else:
+                print(f"⚠️ RAG DEBUG: Model not loaded, using dummy embedding")
                 # Use dummy embedding
                 embedding = self._generate_dummy_embedding(text)
+                print(f"🎲 RAG DEBUG: Dummy embedding generated - dimension: {len(embedding)}")
             
+            print(f"📊 RAG DEBUG: Embedding vector preview: [{embedding[0]:.4f}, {embedding[1]:.4f}, ..., {embedding[-1]:.4f}]")
             logger.info(f"Generated {self.embedding_dimension}D embedding for text (length: {len(text)} chars)")
             return embedding
             
         except Exception as e:
+            print(f"💥 RAG DEBUG: Embedding generation FAILED: {str(e)}")
             logger.error(f"Failed to generate embedding: {str(e)}")
             # Return dummy embedding instead of failing
-            return self._generate_dummy_embedding(text)
+            dummy_embedding = self._generate_dummy_embedding(text)
+            print(f"🎲 RAG DEBUG: Fallback to dummy embedding - dimension: {len(dummy_embedding)}")
+            return dummy_embedding
     
     async def generate_embeddings_batch(self, texts: List[str], model_name: Optional[str] = None) -> List[List[float]]:
         """
@@ -223,6 +236,12 @@ class EmbeddingService:
             ID of the stored embedding record
         """
         try:
+            print(f"💾 RAG DEBUG: Storing embedding in Supabase vector_embeddings table")
+            print(f"📄 RAG DEBUG: Document ID: {document_id}")
+            print(f"📝 RAG DEBUG: Text chunk length: {len(text_chunk)} chars")
+            print(f"🔢 RAG DEBUG: Embedding dimension: {len(embedding)}")
+            print(f"📊 RAG DEBUG: Metadata: {metadata}")
+            
             embedding_data = {
                 "document_id": document_id,
                 "text_content": text_chunk,
@@ -231,13 +250,21 @@ class EmbeddingService:
                 "metadata": metadata or {}
             }
             
+            print(f"🚀 RAG DEBUG: Inserting embedding data into Supabase...")
             response = self.supabase.table("vector_embeddings").insert(embedding_data).execute()
             
+            if not response.data:
+                print(f"💥 RAG DEBUG: Supabase insert returned empty data!")
+                raise Exception("Supabase insert returned empty response")
+            
             embedding_id = response.data[0]["id"]
+            print(f"✅ RAG DEBUG: Embedding stored successfully with ID: {embedding_id}")
             logger.info(f"Stored embedding for document {document_id}: {embedding_id}")
             return embedding_id
             
         except Exception as e:
+            print(f"💥 RAG DEBUG: Failed to store embedding in Supabase: {str(e)}")
+            print(f"🔍 RAG DEBUG: Error details - Document: {document_id}, Text length: {len(text_chunk)}, Embedding dim: {len(embedding)}")
             logger.error(f"Failed to store embedding: {str(e)}")
             raise Exception(f"Failed to store embedding: {str(e)}")
     

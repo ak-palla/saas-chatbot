@@ -89,28 +89,44 @@ class DocumentService:
             Document metadata and processing status
         """
         try:
+            print(f"🚀 RAG DEBUG: Starting document upload for '{filename}' (chatbot: {chatbot_id})")
+            
             # Validate file
             file_info = await self._validate_file(file, filename)
+            print(f"✅ RAG DEBUG: File validated - Type: {file_info['file_type']}, Size: {file_info['size']} bytes")
             
             # Calculate content hash
             file.seek(0)
             content_hash = self._calculate_hash(file.read())
             file.seek(0)
+            print(f"🔐 RAG DEBUG: Content hash calculated: {content_hash[:16]}...")
             
             # Check if document already exists
             existing = await self._check_existing_document(chatbot_id, content_hash)
             if existing:
+                print(f"⚠️ RAG DEBUG: Document with hash {content_hash} already exists - skipping upload")
                 logger.info(f"Document with hash {content_hash} already exists")
                 return existing
             
             # Upload to Google Drive (optional)
             google_drive_id = None
             if self.drive_service:
+                print(f"☁️ RAG DEBUG: Uploading to Google Drive...")
                 google_drive_id = await self._upload_to_drive(file, filename)
                 file.seek(0)
+                if google_drive_id:
+                    print(f"✅ RAG DEBUG: Google Drive upload successful: {google_drive_id}")
+                else:
+                    print(f"❌ RAG DEBUG: Google Drive upload failed")
+            else:
+                print(f"⚠️ RAG DEBUG: Google Drive service not available - skipping cloud upload")
             
             # Extract text content
+            print(f"📝 RAG DEBUG: Extracting text content from {file_info['file_type']} file...")
             text_content = await self._extract_text(file, file_info['file_type'])
+            text_length = len(text_content)
+            print(f"✅ RAG DEBUG: Text extraction complete - {text_length} characters extracted")
+            print(f"📄 RAG DEBUG: Text preview (first 200 chars): {text_content[:200]}...")
             
             # Create document record
             document_data = {
@@ -123,27 +139,41 @@ class DocumentService:
                 "processed": False
             }
             
+            print(f"💾 RAG DEBUG: Creating document record in Supabase...")
             response = self.supabase.table("documents").insert(document_data).execute()
             document = response.data[0]
             document_id = document["id"]
+            print(f"✅ RAG DEBUG: Document record created with ID: {document_id}")
             
-            # Process document asynchronously (create embeddings)
-            await self._process_document_content(document_id, text_content)
+            # Store extracted text for later processing
+            print(f"💾 RAG DEBUG: Storing extracted text content for later processing...")
+            try:
+                self.supabase.table("documents") \
+                    .update({"extracted_text": text_content}) \
+                    .eq("id", document_id) \
+                    .execute()
+                print(f"✅ RAG DEBUG: Text content stored, ready for processing when triggered")
+            except Exception as e:
+                # If extracted_text column doesn't exist, process immediately as fallback
+                print(f"⚠️ RAG DEBUG: extracted_text column not found, processing immediately: {str(e)}")
+                await self._process_document_content(document_id, text_content)
+                self.supabase.table("documents") \
+                    .update({"processed": True}) \
+                    .eq("id", document_id) \
+                    .execute()
+                print(f"✅ RAG DEBUG: Document processed immediately (fallback mode)")
             
-            # Update processed status
-            self.supabase.table("documents") \
-                .update({"processed": True}) \
-                .eq("id", document_id) \
-                .execute()
-            
+            print(f"🎉 RAG DEBUG: Document upload pipeline complete for '{filename}'")
             logger.info(f"Document {filename} uploaded and processed successfully")
             return {
                 **document,
-                "processed": True,
-                "text_length": len(text_content)
+                "processed": False,  # Will be processed when manually triggered
+                "text_length": text_length,
+                "text_stored": True
             }
             
         except Exception as e:
+            print(f"💥 RAG DEBUG: Document upload FAILED for '{filename}': {str(e)}")
             logger.error(f"Document upload failed: {str(e)}")
             raise Exception(f"Failed to upload document: {str(e)}")
     
@@ -330,15 +360,23 @@ class DocumentService:
         """Process document content into chunks and generate embeddings"""
         try:
             # Split text into chunks
+            print(f"✂️ RAG DEBUG: Splitting text into chunks (chunk_size: {self.CHUNK_SIZE}, overlap: {self.CHUNK_OVERLAP})")
             chunks = self._split_text_into_chunks(text_content)
+            print(f"✅ RAG DEBUG: Text split into {len(chunks)} chunks")
             
             # Generate embeddings for each chunk
+            processed_chunks = 0
             for i, chunk in enumerate(chunks):
                 if not chunk.strip():
+                    print(f"⚠️ RAG DEBUG: Skipping empty chunk {i}")
                     continue
+                
+                print(f"🧠 RAG DEBUG: Processing chunk {i+1}/{len(chunks)} (length: {len(chunk)} chars)")
+                print(f"📝 RAG DEBUG: Chunk preview: {chunk[:100]}...")
                 
                 # Generate embedding
                 embedding = await embedding_service.generate_embedding(chunk)
+                print(f"🔢 RAG DEBUG: Generated embedding vector (dimension: {len(embedding) if embedding else 'None'})")
                 
                 # Store embedding with metadata
                 metadata = {
@@ -346,16 +384,21 @@ class DocumentService:
                     "chunk_length": len(chunk)
                 }
                 
+                print(f"💾 RAG DEBUG: Storing embedding in Supabase with metadata: {metadata}")
                 await embedding_service.store_document_embedding(
                     document_id=document_id,
                     text_chunk=chunk,
                     embedding=embedding,
                     metadata=metadata
                 )
+                print(f"✅ RAG DEBUG: Chunk {i+1} embedding stored successfully")
+                processed_chunks += 1
             
+            print(f"🎯 RAG DEBUG: Embedding processing complete - {processed_chunks}/{len(chunks)} chunks processed")
             logger.info(f"Processed {len(chunks)} chunks for document {document_id}")
             
         except Exception as e:
+            print(f"💥 RAG DEBUG: Document content processing FAILED: {str(e)}")
             logger.error(f"Document content processing failed: {str(e)}")
             raise
     
@@ -429,6 +472,92 @@ class DocumentService:
             logger.error(f"List documents failed: {str(e)}")
             raise Exception(f"Failed to list documents: {str(e)}")
     
+    async def process_chatbot_documents(self, chatbot_id: str, user_id: str) -> Dict[str, Any]:
+        """
+        Process all unprocessed documents for a chatbot (generate embeddings)
+        Called when chatbot settings are saved
+        """
+        try:
+            print(f"🚀 RAG DEBUG: Starting batch processing for chatbot {chatbot_id}")
+            
+            # Get all unprocessed documents for this chatbot
+            response = self.supabase.table("documents") \
+                .select("*, chatbots!inner(user_id)") \
+                .eq("chatbot_id", chatbot_id) \
+                .eq("chatbots.user_id", user_id) \
+                .eq("processed", False) \
+                .execute()
+            
+            unprocessed_docs = response.data
+            print(f"📋 RAG DEBUG: Found {len(unprocessed_docs)} unprocessed documents")
+            
+            if not unprocessed_docs:
+                print(f"✅ RAG DEBUG: No documents to process")
+                return {
+                    "processed_count": 0,
+                    "total_embeddings": 0,
+                    "success": True
+                }
+            
+            total_embeddings = 0
+            processed_count = 0
+            
+            for doc in unprocessed_docs:
+                document_id = doc["id"]
+                filename = doc["filename"]
+                extracted_text = doc.get("extracted_text")
+                
+                print(f"🔄 RAG DEBUG: Processing document: {filename} (ID: {document_id})")
+                
+                if not extracted_text:
+                    print(f"⚠️ RAG DEBUG: No extracted text found for {filename}, skipping")
+                    continue
+                
+                try:
+                    # Process document content (create embeddings)
+                    await self._process_document_content(document_id, extracted_text)
+                    
+                    # Update processed status
+                    self.supabase.table("documents") \
+                        .update({"processed": True}) \
+                        .eq("id", document_id) \
+                        .execute()
+                    
+                    processed_count += 1
+                    
+                    # Count embeddings created
+                    embedding_response = self.supabase.table("vector_embeddings") \
+                        .select("id", count="exact") \
+                        .eq("document_id", document_id) \
+                        .execute()
+                    
+                    doc_embeddings = embedding_response.count or 0
+                    total_embeddings += doc_embeddings
+                    
+                    print(f"✅ RAG DEBUG: Processed {filename} - created {doc_embeddings} embeddings")
+                    
+                except Exception as e:
+                    print(f"💥 RAG DEBUG: Failed to process {filename}: {str(e)}")
+                    continue
+            
+            print(f"🎉 RAG DEBUG: Batch processing complete - {processed_count} documents, {total_embeddings} embeddings")
+            
+            return {
+                "processed_count": processed_count,
+                "total_embeddings": total_embeddings,
+                "success": True
+            }
+            
+        except Exception as e:
+            print(f"💥 RAG DEBUG: Batch processing FAILED: {str(e)}")
+            logger.error(f"Batch document processing failed: {str(e)}")
+            return {
+                "processed_count": 0,
+                "total_embeddings": 0,
+                "success": False,
+                "error": str(e)
+            }
+
     async def delete_document(self, document_id: str, user_id: str) -> bool:
         """Delete document and associated embeddings"""
         try:

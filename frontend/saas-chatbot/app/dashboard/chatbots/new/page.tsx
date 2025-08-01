@@ -27,7 +27,7 @@ export default function CreateChatbotPage() {
     name: '',
     description: '',
     system_prompt: '',
-    model: 'mixtral-8x7b-32768',
+    model: 'llama-3.1-8b-instant',
     is_active: true,
     appearance_config: {
       theme: 'light',
@@ -233,22 +233,34 @@ export default function CreateChatbotPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="mixtral-8x7b-32768">
+                      <SelectItem value="llama-3.1-8b-instant">
                         <div className="flex flex-col">
-                          <span>Mixtral 8x7B</span>
+                          <span>Llama 3.1 8B Instant</span>
                           <span className="text-xs text-muted-foreground">Recommended - Fast & Smart</span>
                         </div>
                       </SelectItem>
-                      <SelectItem value="llama2-70b-4096">
+                      <SelectItem value="llama-3.1-70b-versatile">
                         <div className="flex flex-col">
-                          <span>Llama 2 70B</span>
+                          <span>Llama 3.1 70B Versatile</span>
                           <span className="text-xs text-muted-foreground">Most Powerful</span>
                         </div>
                       </SelectItem>
-                      <SelectItem value="gemma-7b-it">
+                      <SelectItem value="llama3-8b-8192">
                         <div className="flex flex-col">
-                          <span>Gemma 7B</span>
-                          <span className="text-xs text-muted-foreground">Lightweight</span>
+                          <span>Llama 3 8B</span>
+                          <span className="text-xs text-muted-foreground">Standard</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="llama3-70b-8192">
+                        <div className="flex flex-col">
+                          <span>Llama 3 70B</span>
+                          <span className="text-xs text-muted-foreground">Large Model</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="gemma2-9b-it">
+                        <div className="flex flex-col">
+                          <span>Gemma 2 9B</span>
+                          <span className="text-xs text-muted-foreground">Google Model</span>
                         </div>
                       </SelectItem>
                     </SelectContent>

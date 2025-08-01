@@ -118,7 +118,12 @@ async def get_chatbot(chatbot_id: str, user_email: str):
 @router.put("/{chatbot_id}", response_model=Chatbot)
 async def update_chatbot(chatbot_id: str, chatbot_update: ChatbotUpdate, user_email: str):
     """Update a chatbot - Simplified approach"""
-    logger.info(f"🔄 Updating chatbot {chatbot_id} for user: {user_email}")
+    logger.info(f"🔄 VOICE DEBUG: ==================== BACKEND UPDATE ====================")
+    logger.info(f"🔄 VOICE DEBUG: Updating chatbot {chatbot_id} for user: {user_email}")
+    logger.info(f"🔄 VOICE DEBUG: Received chatbot_update object: {chatbot_update}")
+    logger.info(f"🔄 VOICE DEBUG: chatbot_update.dict(): {chatbot_update.dict()}")
+    logger.info(f"🔄 VOICE DEBUG: behavior_config in update: {chatbot_update.behavior_config}")
+    logger.info(f"🔄 VOICE DEBUG: enableVoice in behavior_config: {chatbot_update.behavior_config.get('enableVoice') if chatbot_update.behavior_config else 'N/A'}")
     
     supabase = get_supabase_admin()
     
@@ -134,15 +139,23 @@ async def update_chatbot(chatbot_id: str, chatbot_update: ChatbotUpdate, user_em
     if not existing.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chatbot not found")
     
+    logger.info(f"🔄 VOICE DEBUG: Existing chatbot data: {existing.data[0]}")
+    logger.info(f"🔄 VOICE DEBUG: Existing behavior_config: {existing.data[0].get('behavior_config')}")
+    
     # Update chatbot
     update_data = {k: v for k, v in chatbot_update.dict().items() if v is not None}
+    logger.info(f"🔄 VOICE DEBUG: Final update_data being sent to Supabase: {update_data}")
+    logger.info(f"🔄 VOICE DEBUG: behavior_config in final update_data: {update_data.get('behavior_config')}")
     
     try:
         response = supabase.table("chatbots").update(update_data).eq("id", chatbot_id).execute()
-        logger.info(f"✅ Chatbot updated successfully")
+        logger.info(f"✅ VOICE DEBUG: Chatbot updated successfully")
+        logger.info(f"✅ VOICE DEBUG: Updated chatbot data: {response.data[0]}")
+        logger.info(f"✅ VOICE DEBUG: Updated behavior_config: {response.data[0].get('behavior_config')}")
         return response.data[0]
     except Exception as e:
-        logger.error(f"💥 Error updating chatbot: {str(e)}")
+        logger.error(f"💥 VOICE DEBUG: Error updating chatbot: {str(e)}")
+        logger.error(f"💥 VOICE DEBUG: Error type: {type(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update chatbot")
 
 
@@ -190,14 +203,11 @@ class TestChatResponse(BaseModel):
 
 @router.post("/{chatbot_id}/test-chat", response_model=TestChatResponse)
 async def test_chatbot_chat(chatbot_id: str, chat_request: TestChatRequest, user_email: str):
-    """Test chat endpoint for chatbot - Simple Groq API integration"""
+    """Test chat endpoint for chatbot - RAG-enabled chat using message service"""
     logger.info(f"🧪 Testing chat for chatbot {chatbot_id} by user: {user_email}")
     logger.info(f"📨 Chat request: {chat_request.dict()}")
     
     try:
-        # Test basic functionality first
-        logger.info("🔧 Starting basic validation...")
-        
         supabase = get_supabase_admin()
         
         # Get user ID from our users table
@@ -218,124 +228,47 @@ async def test_chatbot_chat(chatbot_id: str, chat_request: TestChatRequest, user
         chatbot = chatbot_response.data[0]
         logger.info(f"✅ Found chatbot: {chatbot['name']}")
         
-        # Debug: Check all settings
-        logger.info(f"🔍 Checking settings...")
-        logger.info(f"🔍 Settings file exists: {settings.model_dump()}")
-        logger.info(f"🔍 GROQ_API_KEY length: {len(settings.GROQ_API_KEY or '')}")
+        print(f"🧪 RAG DEBUG: Using RAG-enabled message service for test chat")
         
-        # Use settings directly - this should resolve the environment variable issue
-        groq_api_key = settings.GROQ_API_KEY
-        if not groq_api_key:
-            logger.error("❌ GROQ_API_KEY not found in settings")
-            logger.error(f"❌ Available settings: {settings.model_dump().keys()}")
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Groq API key not configured")
-        logger.info(f"✅ Using GROQ_API_KEY from settings: {groq_api_key[:8]}...")
-        logger.info(f"✅ Groq API key found: {groq_api_key[:8]}...")
+        # Use the message service for proper RAG integration
+        from app.services.message_service import message_service
+        from app.models.message import ChatRequest
         
-        # Test Groq import
-        logger.info("🔧 Testing Groq import...")
-        try:
-            from groq import Groq
-            logger.info("✅ Groq import successful")
-        except ImportError as import_error:
-            logger.error(f"❌ Groq import failed: {import_error}")
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Groq import failed: {import_error}")
-        
-        # Initialize Groq client
-        logger.info("🔧 Initializing Groq client...")
-        try:
-            client = Groq(api_key=groq_api_key)
-            logger.info("✅ Groq client initialized")
-        except Exception as client_error:
-            logger.error(f"❌ Groq client initialization failed: {client_error}")
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Groq client init failed: {client_error}")
-        
-        # Build messages for Groq API
-        messages = []
-        
-        # Add system prompt from chatbot configuration
-        if chatbot.get("system_prompt"):
-            messages.append({
-                "role": "system",
-                "content": chatbot["system_prompt"]
-            })
-            logger.info(f"✅ Added system prompt: {chatbot['system_prompt'][:50]}...")
-        
-        # Add conversation history
+        # Convert test request to ChatRequest format
+        conversation_history = []
         for msg in chat_request.conversation_history:
-            # Map frontend roles to proper API roles
             role = msg.role.lower()
             if role == "bot":
                 role = "assistant"
-            elif role == "user":
-                role = "user"
-            else:
-                role = "assistant"  # default
-            messages.append({
+            conversation_history.append({
                 "role": role,
                 "content": msg.content
             })
-        logger.info(f"✅ Added {len(chat_request.conversation_history)} history messages")
         
-        # Add current user message
-        messages.append({
-            "role": "user",
-            "content": chat_request.message
-        })
-        logger.info(f"✅ Added user message: {chat_request.message[:50]}...")
+        # Create ChatRequest for message service
+        chat_req = ChatRequest(
+            chatbot_id=chatbot_id,
+            message=chat_request.message,
+            model=chatbot.get("model", "llama-3.1-8b-instant"),
+            use_rag=True,  # Enable RAG for testing
+            temperature=0.7,
+            max_tokens=1000
+        )
         
-# Use supported Groq models from llm_service
-        from app.services.llm_service import llm_service
-        available_models = list(llm_service.MODELS.keys())
-        default_model = llm_service.DEFAULT_MODEL
+        print(f"🎯 RAG DEBUG: Processing test chat with RAG enabled")
         
-        model_name = chatbot.get("model", default_model)
+        # Process message through message service (includes RAG)
+        response = await message_service._generate_llm_response(
+            request=chat_req,
+            chatbot=chatbot,
+            conversation_history=conversation_history
+        )
         
-        # Validate model is supported
-        if model_name not in available_models:
-            logger.warning(f"⚠️ Model {model_name} not in supported list, using {default_model}")
-            model_name = default_model
-        logger.info(f"💬 Sending {len(messages)} messages to Groq API using model: {model_name}")
-        
-        # Call Groq API
-        start_time = time.time()
-        try:
-            completion = client.chat.completions.create(
-                messages=messages,
-                model=model_name,
-                temperature=0.7,
-                max_tokens=1000,
-                timeout=30.0,  # Add timeout to prevent hanging
-            )
-            response_time = time.time() - start_time
-            logger.info(f"⚡ Groq API response received in {response_time:.2f}s")
-        except Exception as groq_error:
-            logger.error(f"❌ Groq API call failed: {groq_error}")
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Groq API call failed: {groq_error}")
-        
-        # Extract response content
-        try:
-            response_content = completion.choices[0].message.content
-            logger.info(f"🤖 Bot response: {response_content[:100]}...")
-        except Exception as extract_error:
-            logger.error(f"❌ Response extraction failed: {extract_error}")
-            logger.info(f"📋 Response object type: {type(completion)}")
-            logger.info(f"📋 Choices: {completion.choices}")
-            logger.info(f"📋 First choice type: {type(completion.choices[0])}")
-            # Try to access content more defensively
-            try:
-                choice = completion.choices[0]
-                if hasattr(choice, 'message') and hasattr(choice.message, 'content'):
-                    response_content = choice.message.content
-                else:
-                    response_content = str(choice)
-                    logger.warning(f"⚠️ Using string representation: {response_content[:100]}...")
-            except Exception as fallback_error:
-                response_content = "I'm sorry, I encountered an issue processing your request. Please try again."
-                logger.error(f"❌ Fallback response: {response_content}")
+        print(f"✅ RAG DEBUG: Test chat response generated successfully")
+        print(f"📊 RAG DEBUG: Response metadata - RAG enabled: {response.get('rag_enabled')}, Context count: {response.get('context_count', 0)}")
         
         return TestChatResponse(
-            response=response_content,
+            response=response["content"],
             conversation_id="test"
         )
         

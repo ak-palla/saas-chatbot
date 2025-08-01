@@ -211,8 +211,8 @@ async def delete_document(
 @router.post("/search/{chatbot_id}", response_model=List[DocumentSearchResult])
 async def search_documents(
     chatbot_id: str,
-    user_email: str,
     query: str = Form(...),
+    user_email: str = Form(...),
     limit: int = Form(10)
 ):
     """Search documents by content similarity"""
@@ -270,4 +270,60 @@ async def search_documents(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Document search failed: {str(e)}"
+        )
+
+
+@router.post("/process/{chatbot_id}")
+async def process_documents(
+    chatbot_id: str,
+    user_email: str
+):
+    """Process unprocessed documents for a chatbot (generate embeddings)"""
+    try:
+        print(f"🚀 RAG DEBUG: Manual document processing triggered for chatbot {chatbot_id}")
+        
+        # Get user ID from email
+        supabase = get_supabase_admin()
+        user_response = supabase.table("users").select("id").eq("email", user_email).limit(1).execute()
+        
+        if not user_response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        user_id = user_response.data[0]["id"]
+        
+        # Verify chatbot ownership
+        chatbot_response = supabase.table("chatbots") \
+            .select("id") \
+            .eq("id", chatbot_id) \
+            .eq("user_id", user_id) \
+            .execute()
+        
+        if not chatbot_response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Chatbot not found"
+            )
+        
+        # Process documents
+        processing_result = await document_service.process_chatbot_documents(chatbot_id, user_id)
+        
+        print(f"📊 RAG DEBUG: Manual processing result: {processing_result}")
+        
+        return {
+            "message": "Document processing completed",
+            "processed_count": processing_result.get("processed_count", 0),
+            "total_embeddings": processing_result.get("total_embeddings", 0),
+            "success": processing_result.get("success", True)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"💥 RAG DEBUG: Manual document processing failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Document processing failed: {str(e)}"
         )

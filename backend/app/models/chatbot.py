@@ -7,7 +7,9 @@ class ChatbotBase(BaseModel):
     name: str
     description: Optional[str] = None
     system_prompt: Optional[str] = None
+    model: Optional[str] = None
     appearance_config: Optional[Dict[str, Any]] = None
+    behavior_config: Optional[Dict[str, Any]] = None
     is_active: bool = True
 
 
@@ -19,7 +21,9 @@ class ChatbotUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     system_prompt: Optional[str] = None
+    model: Optional[str] = None
     appearance_config: Optional[Dict[str, Any]] = None
+    behavior_config: Optional[Dict[str, Any]] = None
     is_active: Optional[bool] = None
 
 

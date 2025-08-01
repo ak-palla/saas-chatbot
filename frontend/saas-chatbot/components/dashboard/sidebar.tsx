@@ -38,11 +38,6 @@ const navigation = [
     ],
   },
   {
-    name: 'Documents',
-    href: '/dashboard/documents',
-    icon: FileText,
-  },
-  {
     name: 'Analytics',
     href: '/dashboard/analytics',
     icon: BarChart3,
