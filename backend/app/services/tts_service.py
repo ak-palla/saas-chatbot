@@ -9,17 +9,21 @@ import asyncio
 from typing import Optional, Dict, Any, AsyncGenerator
 import time
 try:
-    from deepgram import DeepgramClient, SpeakOptions
-    DEEPGRAM_ASYNC_AVAILABLE = False
+    from deepgram import DeepgramClient, SpeakOptions, ClientOptionsFromEnv
+    DEEPGRAM_AVAILABLE = True
 except ImportError:
     try:
-        from deepgram import AsyncDeepgramClient as DeepgramClient, SpeakOptions
-        DEEPGRAM_ASYNC_AVAILABLE = True
-    except ImportError:
+        # Fallback for older versions
         from deepgram import Deepgram
         DeepgramClient = Deepgram
         SpeakOptions = None
-        DEEPGRAM_ASYNC_AVAILABLE = False
+        ClientOptionsFromEnv = None
+        DEEPGRAM_AVAILABLE = True # Corrected from False
+    except ImportError:
+        DeepgramClient = None
+        SpeakOptions = None
+        ClientOptionsFromEnv = None
+        DEEPGRAM_AVAILABLE = False
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -29,7 +33,33 @@ class TTSService:
     """Text-to-Speech service using Deepgram"""
     
     def __init__(self):
-        self.client = DeepgramClient(settings.DEEPGRAM_API_KEY)
+        self.client = None
+        self.is_available = False
+        
+        if not DEEPGRAM_AVAILABLE:
+            logger.warning("Deepgram SDK not available - TTS service will be disabled")
+            return
+            
+        # Check if API key is available
+        api_key = getattr(settings, 'DEEPGRAM_API_KEY', None)
+        logger.info(f"Environment check - API key found: {api_key is not None}")
+        if api_key:
+            logger.info(f"API key length: {len(api_key)}, starts with: {api_key[:8]}...")
+        
+        if not api_key or api_key.strip() == "":
+            logger.warning("DEEPGRAM_API_KEY not set - TTS service will be disabled")
+            return
+            
+        # Initialize Deepgram client with proper SDK v3 configuration
+        try:
+            logger.info(f"Attempting to initialize Deepgram client with API key...")
+            self.client = DeepgramClient(api_key)
+            self.is_available = True
+            logger.info("Deepgram TTS client initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize Deepgram client: {e}")
+            self.is_available = False # Ensure service is marked as unavailable on failure
+            logger.warning("TTS service will be disabled")
         
         # Configuration from settings
         self.max_retries = settings.TTS_MAX_RETRIES
@@ -88,6 +118,11 @@ class TTSService:
         """
         try:
             logger.info(f"Starting TTS synthesis, text length: {len(text)}, voice: {voice or self.default_voice}")
+            logger.info(f"TTS service status - available: {self.is_available}, client: {self.client is not None}")
+            
+            # Check if TTS service is available
+            if not self.is_available or not self.client:
+                raise ValueError("TTS service not available - check Deepgram API key configuration")
             
             # Validate input
             if not text or not text.strip():
@@ -98,6 +133,7 @@ class TTSService:
             
             # Clean and prepare text
             cleaned_text = self._clean_text(text)
+            logger.info(f"Cleaned text length: {len(cleaned_text)}")
             
             # Set voice
             voice_model = voice or self.default_voice
@@ -105,20 +141,32 @@ class TTSService:
                 logger.warning(f"Unknown voice {voice_model}, using default {self.default_voice}")
                 voice_model = self.default_voice
             
-            # Configure speech options
+            # Configure speech options - sample_rate only applies to linear16 and wav
             try:
-                options = SpeakOptions(
-                    model=voice_model,
-                    encoding=encoding,
-                    sample_rate=sample_rate
-                )
+                if encoding in ["linear16", "wav"]:
+                    options = SpeakOptions(
+                        model=voice_model,
+                        encoding=encoding,
+                        sample_rate=sample_rate
+                    )
+                else:
+                    options = SpeakOptions(
+                        model=voice_model,
+                        encoding=encoding
+                    )
             except Exception:
                 # Fallback for older SDK versions
-                options = {
-                    "model": voice_model,
-                    "encoding": encoding,
-                    "sample_rate": sample_rate
-                }
+                if encoding in ["linear16", "wav"]:
+                    options = {
+                        "model": voice_model,
+                        "encoding": encoding,
+                        "sample_rate": sample_rate
+                    }
+                else:
+                    options = {
+                        "model": voice_model,
+                        "encoding": encoding
+                    }
             
             if bit_rate:
                 try:
@@ -332,17 +380,35 @@ class TTSService:
                     logger.info(f"Retrying TTS API call in {wait_time}s (attempt {attempt + 1}/{self.max_retries + 1})")
                     await asyncio.sleep(wait_time)
                 
-                # Prepare the text source properly for Deepgram API
+                # Prepare the text source properly for Deepgram API (SDK v3 format)
                 text_source = {"text": text}
+                logger.info(f"Calling Deepgram TTS API with text length: {len(text)}")
+                logger.info(f"Options type: {type(options)}, options: {options}")
                 
-                # Add timeout to the API call
-                response = await asyncio.wait_for(
-                    self.client.speak.v("1").save(text_source, options),
-                    timeout=self.timeout
-                )
+                # Add timeout to the API call using correct SDK v3 method
+                try:
+                    # Use the correct sync method for Deepgram SDK v3 wrapped in executor
+                    logger.info("Attempting to call Deepgram TTS API")
+                    
+                    def call_tts():
+                        return self.client.speak.v("1").stream(text_source, options)
+                    
+                    response = await asyncio.wait_for(
+                        asyncio.get_event_loop().run_in_executor(None, call_tts),
+                        timeout=self.timeout
+                    )
+                    logger.info("Deepgram TTS API call successful")
+                except Exception as api_error:
+                    logger.error(f"Deepgram TTS API call failed: {api_error}")
+                    # Re-raise the error to be caught by the retry loop
+                    raise api_error
                 
-                # Process different response types
-                if hasattr(response, 'content'):
+                # Process SpeakResponse type
+                if hasattr(response, 'stream') and hasattr(response.stream, 'read'):
+                    # Read from BytesIO stream
+                    response.stream.seek(0)  # Ensure we're at the beginning
+                    return response.stream.read()
+                elif hasattr(response, 'content'):
                     return response.content
                 elif hasattr(response, 'read'):
                     # Handle file-like response
@@ -405,6 +471,14 @@ class TTSService:
     async def health_check(self) -> Dict[str, Any]:
         """Check TTS service health"""
         try:
+            if not self.is_available or not self.client:
+                return {
+                    "status": "unavailable",
+                    "error": "TTS service not initialized - check Deepgram API key",
+                    "available_voices": 0,
+                    "note": "Deepgram TTS service disabled due to missing or invalid API key"
+                }
+            
             # Try a simple API call to check connectivity
             health_status = "healthy"
             note = "TTS service operational with Deepgram API"
@@ -414,13 +488,14 @@ class TTSService:
                 if hasattr(self.client, 'speak'):
                     test_options = SpeakOptions(
                         model=self.default_voice,
-                        encoding="mp3",
-                        sample_rate=24000
+                        encoding="mp3"
                     )
-                    test_response = await self.client.speak.v("1").save(
-                        {"text": "test"}, test_options
-                    )
-                    if not test_response:
+                    # Use SDK v3 method for health check
+                    def call_health_check():
+                        return self.client.speak.v("1").stream({"text": "test"}, test_options)
+                    
+                    test_response = await asyncio.get_event_loop().run_in_executor(None, call_health_check)
+                    if not test_response or not hasattr(test_response, 'stream'):
                         health_status = "degraded"
                         note = "TTS API responding but with issues"
             except Exception as e:

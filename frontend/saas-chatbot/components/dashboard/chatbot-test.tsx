@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageSquare, Send, Bot, User, RotateCcw, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { apiService, TestChatMessage } from '@/lib/api';
+import { createClient } from '@/lib/supabase/client';
 
 interface ChatbotTestProps {
   chatbot: any;
@@ -19,6 +20,8 @@ interface Message {
   content: string;
   timestamp: Date;
 }
+
+// Initialize Supabase client using the same method as API service
 
 export function ChatbotTest({ chatbot }: ChatbotTestProps) {
   const { toast } = useToast();
@@ -155,38 +158,56 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
       }
 
       // Initialize Speech Synthesis
-      console.log('🔍 VOICE DEBUG: Checking for Speech Synthesis API...');
-      console.log('🔍 VOICE DEBUG: speechSynthesis available:', 'speechSynthesis' in window);
+      console.log('🔊 TTS DEBUG: ==================== TTS SYSTEM DETECTION ====================');
+      console.log('🔊 TTS DEBUG: Checking for Speech Synthesis API...');
+      console.log('🔊 TTS DEBUG: speechSynthesis available:', 'speechSynthesis' in window);
+      console.log('🔊 TTS DEBUG: 🎯 CURRENT TTS SYSTEM: Browser Web Speech API (NOT Deepgram)');
+      console.log('🔊 TTS DEBUG: This uses the browser\'s built-in text-to-speech engine');
       
       if ('speechSynthesis' in window) {
         synthRef.current = window.speechSynthesis;
-        console.log('✅ VOICE DEBUG: Speech Synthesis initialized');
+        console.log('✅ TTS DEBUG: Browser Speech Synthesis initialized');
+        console.log('🔊 TTS DEBUG: TTS Provider: Browser Web Speech API');
+        console.log('🔊 TTS DEBUG: TTS Type: Client-side (no API calls to Deepgram)');
         
         // Log available voices
         const voices = synthRef.current.getVoices();
-        console.log('🔍 VOICE DEBUG: Available voices:', voices.length);
+        console.log('🔊 TTS DEBUG: Available browser voices:', voices.length);
         if (voices.length === 0) {
           // Voices might not be loaded yet, try after a delay
           setTimeout(() => {
             const delayedVoices = synthRef.current?.getVoices() || [];
-            console.log('🔍 VOICE DEBUG: Available voices (delayed):', delayedVoices.length);
+            console.log('🔊 TTS DEBUG: Available browser voices (delayed):', delayedVoices.length);
+            console.log('🔊 TTS DEBUG: 📋 Voice List (Browser TTS):');
             delayedVoices.slice(0, 5).forEach((voice, i) => {
-              console.log(`  ${i + 1}. ${voice.name} (${voice.lang}) - ${voice.localService ? 'Local' : 'Remote'}`);
+              console.log(`  ${i + 1}. ${voice.name} (${voice.lang}) - ${voice.localService ? 'Local' : 'Remote'} - Browser Engine`);
             });
           }, 1000);
         } else {
+          console.log('🔊 TTS DEBUG: 📋 Voice List (Browser TTS):');
           voices.slice(0, 5).forEach((voice, i) => {
-            console.log(`  ${i + 1}. ${voice.name} (${voice.lang}) - ${voice.localService ? 'Local' : 'Remote'}`);
+            console.log(`  ${i + 1}. ${voice.name} (${voice.lang}) - ${voice.localService ? 'Local' : 'Remote'} - Browser Engine`);
           });
         }
       } else {
-        console.error('🔊 VOICE DEBUG: Speech Synthesis API not available in this browser');
+        console.error('🔊 TTS DEBUG: Browser Speech Synthesis API not available in this browser');
+        console.log('🔊 TTS DEBUG: Would need to implement Deepgram TTS as fallback');
         toast({
           title: "Voice Output Not Supported",
           description: "Your browser doesn't support speech synthesis.",
           variant: "destructive",
         });
       }
+
+      // Check TTS implementation status
+      console.log('🔊 TTS DEBUG: Checking TTS implementation status...');
+      console.log('🔊 TTS DEBUG: 📋 TTS SYSTEM STATUS (TEMPORARY):');
+      console.log('🔊 TTS DEBUG: ✅ Browser TTS: IMPLEMENTED and ACTIVE');
+      console.log('🔊 TTS DEBUG: 🔧 Deepgram TTS: IMPLEMENTED but TEMPORARILY DISABLED');
+      console.log('🔊 TTS DEBUG: 🎯 CURRENT STRATEGY: Browser TTS only');
+      console.log('🔊 TTS DEBUG: 💰 COST: Browser $0.00 (free)');
+      console.log('🔊 TTS DEBUG: 🔧 NOTE: Fixing Deepgram API integration (CORS + Auth issues)');
+      console.log('🔊 TTS DEBUG: ===============================================================');
 
       console.log('✅ VOICE DEBUG: Voice services initialization completed');
     } catch (error) {
@@ -246,103 +267,252 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
     }
   };
 
-  const speakResponse = (text: string) => {
-    console.log('🔊 VOICE DEBUG: speakResponse called with text:', text?.substring(0, 100) + '...');
-    console.log('🔍 VOICE DEBUG: synthRef.current exists:', !!synthRef.current);
-    console.log('🔍 VOICE DEBUG: voiceEnabled:', voiceEnabled);
-    console.log('🔍 VOICE DEBUG: text length:', text?.length);
 
-    if (!synthRef.current || !voiceEnabled) {
-      console.warn('⚠️ VOICE DEBUG: Cannot speak - missing requirements:', {
-        hasSynth: !!synthRef.current,
-        voiceEnabled,
-        hasText: !!text
-      });
-      return;
+  const speakResponseWithBrowser = (text: string) => {
+    console.log('🔊 TTS DEBUG: ==================== BROWSER TTS ====================');
+    console.log('🔊 TTS DEBUG: 🎯 USING: Browser Web Speech API');
+    console.log('🔊 TTS DEBUG: Text length:', text.length);
+
+    if (!synthRef.current) {
+      console.error('💥 TTS DEBUG: Browser TTS not available');
+      throw new Error('Browser TTS not available');
     }
 
+    return new Promise<void>((resolve, reject) => {
+      try {
+        // Cancel any ongoing speech
+        synthRef.current!.cancel();
+        
+        // Small delay to ensure cancellation is processed
+        setTimeout(() => {
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.rate = 1.0;
+          utterance.pitch = 1.0;
+          utterance.volume = 1.0;
+          
+          console.log('🔊 TTS DEBUG: Creating utterance with settings:', {
+            rate: utterance.rate,
+            pitch: utterance.pitch,
+            volume: utterance.volume,
+            text: text.substring(0, 50) + '...'
+          });
+          
+          utterance.onstart = () => {
+            setIsSpeaking(true);
+            console.log('🔊 TTS DEBUG: ✅ BROWSER TTS STARTED');
+            console.log('🔊 TTS DEBUG: Engine: Browser Web Speech API');
+            console.log('🔊 TTS DEBUG: Cost: $0.00 (free)');
+          };
+          
+          utterance.onend = () => {
+            setIsSpeaking(false);
+            console.log('🔊 TTS DEBUG: ✅ BROWSER TTS ENDED');
+            resolve();
+          };
+          
+          utterance.onerror = (event) => {
+            setIsSpeaking(false);
+            console.error('💥 TTS DEBUG: BROWSER TTS ERROR:', {
+              error: event.error,
+              type: event.type,
+              charIndex: event.charIndex
+            });
+            reject(new Error(`Browser TTS error: ${event.error}`));
+          };
+
+          utterance.onpause = () => {
+            console.log('⏸️ TTS DEBUG: Browser TTS paused');
+          };
+
+          utterance.onresume = () => {
+            console.log('▶️ TTS DEBUG: Browser TTS resumed');
+          };
+
+          console.log('🔊 TTS DEBUG: Calling speak()...');
+          synthRef.current!.speak(utterance);
+          console.log('🔊 TTS DEBUG: ✅ speak() called successfully');
+          
+          // Additional debug after short delay
+          setTimeout(() => {
+            console.log('🔊 TTS DEBUG: Speech status check:', {
+              speaking: synthRef.current!.speaking,
+              pending: synthRef.current!.pending,
+              paused: synthRef.current!.paused
+            });
+          }, 100);
+          
+        }, 10); // Small delay to ensure cancellation is processed
+        
+      } catch (error) {
+        setIsSpeaking(false);
+        console.error('💥 TTS DEBUG: Browser TTS setup failed:', error);
+        reject(error);
+      }
+    });
+  };
+
+  // Primary Deepgram TTS function
+  const speakResponseWithDeepgram = async (text: string): Promise<void> => {
+    console.log('🔊 DEEPGRAM TTS: ==================== DEEPGRAM TTS SYSTEM ====================');
+    console.log('🔊 DEEPGRAM TTS: Starting TTS request for text:', text?.substring(0, 100) + '...');
+    console.log('🔊 DEEPGRAM TTS: Text length:', text?.length);
+    
+    try {
+      setIsSpeaking(true);
+      
+      // Call our frontend API route that proxies to Deepgram
+      console.log('🔊 DEEPGRAM TTS: Calling frontend TTS API route...');
+      
+      // Get user email for the request (using same method as API service)
+      let userEmail = null;
+      try {
+        const supabase = createClient();
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (!error && user?.email) {
+          userEmail = user.email;
+          console.log('🔊 DEEPGRAM TTS: Got user email:', userEmail);
+        } else {
+          console.error('🔊 DEEPGRAM TTS: Failed to get user:', error);
+        }
+      } catch (error) {
+        console.error('🔊 DEEPGRAM TTS: Error getting user:', error);
+      }
+      
+      if (!userEmail) {
+        throw new Error('User not authenticated - no email found');
+      }
+      
+      const response = await fetch('/api/tts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: text,
+          voice: 'aura-asteria-en',
+          encoding: 'mp3', // Use MP3 format (supported by Deepgram)
+          speed: 1.0,
+          pitch: 1.0,
+          user_email: userEmail
+        })
+      });
+      
+      console.log('🔊 DEEPGRAM TTS: Frontend API response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('🔊 DEEPGRAM TTS: API request failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText
+        });
+        throw new Error(`TTS API failed: ${response.status} ${response.statusText}`);
+      }
+      
+      // Get audio data as ArrayBuffer
+      const audioBuffer = await response.arrayBuffer();
+      console.log('🔊 DEEPGRAM TTS: Received audio buffer:', {
+        size: audioBuffer.byteLength,
+        type: 'ArrayBuffer'
+      });
+      
+      if (audioBuffer.byteLength === 0) {
+        throw new Error('Received empty audio buffer');
+      }
+      
+      // Create audio blob and play it
+      const audioBlob = new Blob([audioBuffer], { type: 'audio/wav' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      
+      console.log('🔊 DEEPGRAM TTS: Created audio URL:', audioUrl);
+      
+      // Create and play audio element
+      const audio = new Audio(audioUrl);
+      
+      // Set up audio event handlers
+      audio.onloadstart = () => {
+        console.log('🔊 DEEPGRAM TTS: Audio loading started');
+      };
+      
+      audio.oncanplay = () => {
+        console.log('🔊 DEEPGRAM TTS: Audio can start playing');
+      };
+      
+      audio.onplay = () => {
+        console.log('🔊 DEEPGRAM TTS: Audio playback started');
+      };
+      
+      audio.onended = () => {
+        console.log('🔊 DEEPGRAM TTS: Audio playback ended');
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl); // Clean up
+      };
+      
+      audio.onerror = (error) => {
+        console.error('🔊 DEEPGRAM TTS: Audio playback error:', error);
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl); // Clean up
+        throw new Error('Audio playback failed');
+      };
+      
+      // Start playing
+      console.log('🔊 DEEPGRAM TTS: Starting audio playback...');
+      await audio.play();
+      
+      console.log('🔊 DEEPGRAM TTS: ✅ SUCCESS: Deepgram TTS completed successfully');
+      
+    } catch (error) {
+      console.error('💥 DEEPGRAM TTS: Failed:', error);
+      setIsSpeaking(false);
+      throw error; // Re-throw for fallback handling
+    }
+    
+    console.log('🔊 DEEPGRAM TTS: ================================================================');
+  };
+
+  const speakResponse = async (text: string) => {
+    console.log('🔊 TTS DEBUG: ==================== HYBRID TTS SYSTEM ====================');
+    console.log('🔊 TTS DEBUG: speakResponse called with text:', text?.substring(0, 100) + '...');
+    console.log('🔊 TTS DEBUG: voiceEnabled:', voiceEnabled);
+    console.log('🔊 TTS DEBUG: text length:', text?.length);
+    console.log('🔊 TTS DEBUG: 🎯 Using HYBRID TTS: Deepgram (Primary) → Browser (Fallback)');
+
     if (!text || !text.trim()) {
-      console.warn('⚠️ VOICE DEBUG: Cannot speak - empty text');
+      console.warn('⚠️ TTS DEBUG: Cannot speak - empty text');
       return;
     }
 
     try {
-      console.log('🔊 VOICE DEBUG: Canceling any ongoing speech...');
-      synthRef.current.cancel();
+      // Try Deepgram TTS first
+      console.log('🔊 TTS DEBUG: 🎯 TRYING: Deepgram TTS (Primary)');
+      await speakResponseWithDeepgram(text);
+      console.log('🔊 TTS DEBUG: ✅ SUCCESS: Deepgram TTS completed successfully');
       
-      console.log('🔊 VOICE DEBUG: Creating speech utterance...');
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
+    } catch (deepgramError) {
+      console.warn('⚠️ TTS DEBUG: Deepgram TTS failed, falling back to Browser TTS');
+      console.warn('⚠️ TTS DEBUG: Deepgram error:', deepgramError);
       
-      console.log('🔊 VOICE DEBUG: Utterance created with settings:', {
-        rate: utterance.rate,
-        pitch: utterance.pitch,
-        volume: utterance.volume,
-        lang: utterance.lang,
-        voice: utterance.voice?.name
-      });
-      
-      utterance.onstart = () => {
-        setIsSpeaking(true);
-        console.log('🔊 VOICE DEBUG: ✅ Speech synthesis STARTED - utterance.onstart fired');
-      };
-      
-      utterance.onend = () => {
+      try {
+        // Fall back to Browser TTS
+        console.log('🔊 TTS DEBUG: 🔄 FALLBACK: Using Browser TTS');
+        await speakResponseWithBrowser(text);
+        console.log('🔊 TTS DEBUG: ✅ SUCCESS: Browser TTS fallback completed successfully');
+        
+      } catch (browserError) {
+        console.error('💥 TTS DEBUG: Both Deepgram and Browser TTS failed!');
+        console.error('💥 TTS DEBUG: Deepgram error:', deepgramError);
+        console.error('💥 TTS DEBUG: Browser error:', browserError);
+        
         setIsSpeaking(false);
-        console.log('🔊 VOICE DEBUG: ✅ Speech synthesis ENDED - utterance.onend fired');
-      };
-      
-      utterance.onerror = (event) => {
-        setIsSpeaking(false);
-        console.error('💥 VOICE DEBUG: Speech synthesis ERROR:', {
-          error: event.error,
-          type: event.type,
-          charIndex: event.charIndex,
-          elapsedTime: event.elapsedTime
+        toast({
+          title: "Voice Output Error",
+          description: "Both Deepgram and Browser TTS failed. Check console for details.",
+          variant: "destructive",
         });
-      };
-
-      utterance.onpause = () => {
-        console.log('⏸️ VOICE DEBUG: Speech synthesis PAUSED');
-      };
-
-      utterance.onresume = () => {
-        console.log('▶️ VOICE DEBUG: Speech synthesis RESUMED');
-      };
-
-      utterance.onboundary = (event) => {
-        console.log('🔊 VOICE DEBUG: Speech boundary event:', {
-          name: event.name,
-          charIndex: event.charIndex,
-          elapsedTime: event.elapsedTime
-        });
-      };
-
-      console.log('🔊 VOICE DEBUG: Calling synthRef.current.speak()...');
-      synthRef.current.speak(utterance);
-      console.log('🔊 VOICE DEBUG: ✅ synthRef.current.speak() called successfully');
-      
-      // Additional debug info
-      setTimeout(() => {
-        console.log('🔊 VOICE DEBUG: Speech status after 100ms:', {
-          speaking: synthRef.current?.speaking,
-          pending: synthRef.current?.pending,
-          paused: synthRef.current?.paused,
-          isSpeaking: isSpeaking
-        });
-      }, 100);
-      
-    } catch (error) {
-      console.error('💥 VOICE DEBUG: Failed to speak response:', error);
-      setIsSpeaking(false);
-      toast({
-        title: "Voice Output Error",
-        description: "Failed to speak response. Check console for details.",
-        variant: "destructive",
-      });
+      }
     }
+    
+    console.log('🔊 TTS DEBUG: ================================================================');
   };
 
   const stopSpeaking = () => {
@@ -450,9 +620,27 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
       console.log('🔊 VOICE DEBUG: 🎯 CRITICAL: About to call speakResponse for voice input');
       console.log('🔊 VOICE DEBUG: Response text to speak:', response.response?.substring(0, 100) + '...');
       console.log('🔊 VOICE DEBUG: Current voiceEnabled state:', voiceEnabled);
+      console.log('🔊 VOICE DEBUG: shouldUseVoice (from chatbot data):', shouldUseVoice);
       console.log('🔊 VOICE DEBUG: synthRef.current exists:', !!synthRef.current);
       
-      speakResponse(response.response);
+      // Use shouldUseVoice instead of voiceEnabled for voice messages
+      if (shouldUseVoice && response.response) {
+        console.log('🔊 VOICE DEBUG: ✅ FORCING speech synthesis for voice input (bypassing state issue)');
+        console.log('🔊 VOICE DEBUG: 🎯 BYPASSING voiceEnabled state and calling Browser TTS directly');
+        
+        // Use the hybrid TTS system (Deepgram primary, Browser fallback)
+        try {
+          await speakResponse(response.response);
+          console.log('🔊 VOICE DEBUG: ✅ Hybrid TTS completed successfully');
+        } catch (error) {
+          console.error('💥 VOICE DEBUG: Hybrid TTS failed:', error);
+        }
+      } else {
+        console.log('🔊 VOICE DEBUG: ❌ NOT using speech synthesis:', {
+          shouldUseVoice,
+          hasResponse: !!response.response
+        });
+      }
       
       console.log('🔊 VOICE DEBUG: ✅ speakResponse called for voice message');
     } catch (error) {
@@ -534,17 +722,29 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
 
       setMessages(prev => [...prev, botMessage]);
 
-      // Trigger voice response if voice is enabled
-      if (voiceEnabled && response.response) {
-        console.log('🔊 VOICE DEBUG: 🎯 CRITICAL: Voice enabled for text message, triggering speech synthesis');
-        console.log('🔊 VOICE DEBUG: Text message response to speak:', response.response?.substring(0, 100) + '...');
-        console.log('🔊 VOICE DEBUG: Current voiceEnabled state:', voiceEnabled);
-        console.log('🔊 VOICE DEBUG: synthRef.current exists:', !!synthRef.current);
-        speakResponse(response.response);
-        console.log('🔊 VOICE DEBUG: ✅ speakResponse called for text message');
+      // Trigger voice response if voice is enabled (using shouldUseVoice for reliability)
+      const shouldUseVoice = chatbot?.behavior_config?.enableVoice || false;
+      console.log('🔊 TEXT DEBUG: Text message response completed:', {
+        voiceEnabled,
+        shouldUseVoice,
+        responseLength: response.response?.length,
+        behaviorConfig: chatbot?.behavior_config
+      });
+      
+      if (shouldUseVoice && response.response) {
+        console.log('🔊 TEXT DEBUG: ✅ FORCING speech synthesis for text message (bypassing state issue)');
+        console.log('🔊 TEXT DEBUG: Text message response to speak:', response.response?.substring(0, 100) + '...');
+        console.log('🔊 TEXT DEBUG: 🎯 Using HYBRID TTS: Deepgram (Primary) → Browser (Fallback)');
+        
+        try {
+          await speakResponse(response.response);
+          console.log('🔊 TEXT DEBUG: ✅ Hybrid TTS completed for text message');
+        } catch (error) {
+          console.error('💥 TEXT DEBUG: Hybrid TTS failed for text message:', error);
+        }
       } else {
-        console.log('🔊 VOICE DEBUG: NOT triggering speech synthesis for text message:', {
-          voiceEnabled,
+        console.log('🔊 TEXT DEBUG: ❌ NOT using speech synthesis for text message:', {
+          shouldUseVoice,
           hasResponse: !!response.response,
           responseLength: response.response?.length
         });

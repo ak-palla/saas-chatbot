@@ -528,12 +528,16 @@ class VoiceService:
     async def health_check(self) -> Dict[str, Any]:
         """Check voice service health"""
         try:
-            # Simple health check without calling external services
+            # Check actual TTS service health
+            tts_health = await tts_service.health_check()
+            tts_status = tts_health.get("status", "unknown")
+            tts_note = tts_health.get("note", "TTS service status unknown")
+            
             return {
                 "status": "healthy",
                 "components": {
                     "stt": {"status": "healthy", "note": "Groq Whisper V3"},
-                    "tts": {"status": "healthy", "note": "Mock TTS (Deepgram needs setup)"}
+                    "tts": {"status": tts_status, "note": tts_note}
                 },
                 "active_sessions": len(self.processing_sessions),
                 "default_config": self.default_voice_config,

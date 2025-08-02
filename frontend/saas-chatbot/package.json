@@ -1,9 +1,12 @@
 {
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
+    "dev-stable": "next dev",
+    "dev-turbo": "next dev --turbopack",
+    "dev-original": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start", 
     "lint": "next lint",
     "build-widget": "node scripts/build-widget.js",
     "dev-widget": "cd src/widget && npm run dev",

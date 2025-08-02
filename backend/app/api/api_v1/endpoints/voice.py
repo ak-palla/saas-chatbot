@@ -17,7 +17,7 @@ from app.models.voice import (
 from app.core.supabase_auth import get_current_user_supabase
 from app.services.voice_service import voice_service
 from app.services.stt_service import stt_service
-from app.services.tts_service import tts_service
+from app.services.tts_service import tts_service, DEEPGRAM_AVAILABLE
 from app.utils.audio_utils import audio_processor
 
 logger = logging.getLogger(__name__)
@@ -136,15 +136,37 @@ async def voice_chat(
 @router.post("/tts", response_model=bytes)
 async def text_to_speech(
     request: TextToSpeechRequest,
-    current_user: dict = Depends(get_current_user_supabase)
+    user_email: str
 ):
     """
-    Convert text to speech
+    Convert text to speech - Simplified email-based authentication
     
     Returns audio data as bytes
     """
     try:
-        logger.info(f"TTS request from user {current_user['id']}, text length: {len(request.text)}")
+        logger.info(f"TTS request from user {user_email}, text length: {len(request.text)}")
+        logger.info(f"TTS service status: available={tts_service.is_available}, client={tts_service.client is not None}")
+        
+        # Check if TTS service is available
+        if not hasattr(tts_service, 'is_available') or not tts_service.is_available:
+            logger.error("TTS service not available")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="TTS service not available - check Deepgram configuration"
+            )
+        
+        # Verify user exists (similar to other endpoints)
+        from app.core.database import get_supabase_admin
+        supabase = get_supabase_admin()
+        user_response = supabase.table("users").select("id").eq("email", user_email).limit(1).execute()
+        
+        if not user_response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        logger.info(f"Calling TTS service with voice: {request.voice}, encoding: {request.encoding}")
         
         # Synthesize speech
         result = await tts_service.synthesize_speech(
@@ -155,6 +177,8 @@ async def text_to_speech(
             encoding=request.encoding,
             sample_rate=request.sample_rate
         )
+        
+        logger.info(f"TTS synthesis completed, audio size: {len(result['audio_data'])} bytes")
         
         # Return audio as streaming response
         return StreamingResponse(
@@ -168,8 +192,12 @@ async def text_to_speech(
             }
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"TTS processing failed: {e}")
+        import traceback
+        logger.error(f"TTS processing failed for user {user_email} with text: {request.text}")
+        logger.error(f"TTS error traceback: {traceback.format_exc()}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Text-to-speech failed: {str(e)}"
@@ -449,10 +477,17 @@ async def voice_service_health():
     try:
         health = await voice_service.health_check()
         
+        # Also check TTS service specifically
+        tts_status = {
+            "available": getattr(tts_service, 'is_available', False),
+            "client_initialized": getattr(tts_service, 'client', None) is not None,
+        }
+        
         return {
             "status": health.get("status", "unknown"),
             "components": health.get("components", {}),
             "active_sessions": health.get("active_sessions", 0),
+            "tts_service": tts_status,
             "endpoints": {
                 "voice_chat": "/voice/chat",
                 "text_to_speech": "/voice/tts", 
@@ -467,5 +502,22 @@ async def voice_service_health():
         logger.error(f"Voice service health check failed: {e}")
         return {
             "status": "unhealthy",
+            "error": str(e)
+        }
+
+@router.get("/tts/health")
+async def tts_service_health():
+    """Check TTS service health specifically"""
+    try:
+        return {
+            "tts_available": getattr(tts_service, 'is_available', False),
+            "client_initialized": getattr(tts_service, 'client', None) is not None,
+            "deepgram_available": DEEPGRAM_AVAILABLE,
+            "service_status": "healthy" if getattr(tts_service, 'is_available', False) else "unavailable"
+        }
+    except Exception as e:
+        logger.error(f"TTS health check failed: {e}")
+        return {
+            "status": "error",
             "error": str(e)
         }

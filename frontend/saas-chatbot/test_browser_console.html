@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Frontend API Test</title>
+</head>
+<body>
+    <h1>Frontend API Test</h1>
+    <button onclick="testChatbotsAPI()">Test Chatbots API</button>
+    <div id="result"></div>
+    
+    <script>
+        async function testChatbotsAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                console.log('🧪 Testing chatbots API...');
+                
+                const url = 'http://localhost:8000/api/v1/chatbots?user_email=akhilpalla@webuildtrades.co';
+                console.log('📡 Fetching:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                console.log('📊 Response status:', response.status);
+                console.log('📊 Response headers:', Object.fromEntries(response.headers.entries()));
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('📦 Response data type:', typeof data);
+                console.log('📦 Response data:', data);
+                
+                if (Array.isArray(data)) {
+                    resultDiv.innerHTML = `
+                        <h2>✅ Success!</h2>
+                        <p>Found ${data.length} chatbots</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <h2>⚠️ Unexpected Response Format</h2>
+                        <p>Expected array, got: ${typeof data}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('❌ API test failed:', error);
+                resultDiv.innerHTML = `
+                    <h2>❌ Error</h2>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+        
+        // Auto-test on load
+        window.onload = () => {
+            console.log('🧪 Frontend API Test Page Loaded');
+            setTimeout(testChatbotsAPI, 1000);
+        };
+    </script>
+</body>
+</html>

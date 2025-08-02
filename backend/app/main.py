@@ -6,10 +6,11 @@ from app.core.config import settings
 from app.api.api_v1.api import api_router
 from app.core.middleware import setup_middleware
 
-# Configure logging
 import logging
-logging.basicConfig(level=logging.INFO)
+import json
+
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -40,6 +41,28 @@ setup_middleware(app)
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record):
+        log_record = {
+            "time": self.formatTime(record, self.datefmt),
+            "level": record.levelname,
+            "name": record.name,
+            "message": record.getMessage(),
+        }
+        return json.dumps(log_record)
+
+
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+formatter = JsonFormatter()
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+
+
+
+
+
 @app.get("/")
 async def root():
     logger.info("🌟 Root endpoint accessed")
@@ -48,3 +71,22 @@ async def root():
         "version": settings.VERSION,
         "status": "operational"
     }
+
+
+from fastapi import Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
+
+
+@app.get("/health")
+async def health_check():
+    try:
+        return {"status": "ok", "message": "Service is healthy"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"message": exc.detail},)
