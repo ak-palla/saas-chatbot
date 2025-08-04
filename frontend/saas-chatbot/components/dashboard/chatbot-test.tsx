@@ -73,9 +73,13 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
     
     if (isVoiceEnabled) {
       console.log('🎤 VOICE DEBUG: Voice chat enabled for this chatbot - initializing services');
+      console.log('🔍 RAG DEBUG: Voice mode enabled - checking RAG impact');
+      console.log('🔍 RAG DEBUG: Chatbot will use voice processing pipeline');
+      console.log('🔍 RAG DEBUG: This may affect how RAG context is retrieved and processed');
       initializeVoiceServices();
     } else {
       console.log('🔇 VOICE DEBUG: Voice chat disabled for this chatbot');
+      console.log('🔍 RAG DEBUG: Regular text mode - RAG should work normally');
       console.log('🔍 VOICE DEBUG: Possible reasons:');
       console.log('  - behavior_config is null/undefined:', !chatbot?.behavior_config);
       console.log('  - enableVoice is false:', chatbot?.behavior_config?.enableVoice === false);
@@ -587,6 +591,10 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
 
       // Call real API
       console.log('📡 VOICE DEBUG: Calling testChatbot API with voice message...');
+      console.log('🔍 RAG DEBUG: This is a VOICE-based message');
+      console.log('🔍 RAG DEBUG: Voice enabled for this chatbot:', voiceEnabled);
+      console.log('🔍 RAG DEBUG: Backend should process this through voice service pipeline');
+      console.log('🔍 RAG DEBUG: Voice service should call message service with use_rag=true');
       
       const response = await apiService.testChatbot(chatbot.id, {
         message: message,
@@ -692,22 +700,34 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
       }));
 
       // Call real API
-      console.log('📡 RAG DEBUG: Calling testChatbot API with message:', currentInput);
-      console.log('💬 RAG DEBUG: Conversation history length:', conversationHistory.length);
+      console.log('🔍 RAG FLOW DEBUG: ==================== TEXT MESSAGE PROCESSING ====================');
+      console.log('📡 RAG FLOW DEBUG: Calling testChatbot API with message:', currentInput);
+      console.log('💬 RAG FLOW DEBUG: Conversation history length:', conversationHistory.length);
+      console.log('🔍 RAG FLOW DEBUG: Voice enabled for this chatbot:', voiceEnabled);
+      console.log('🔍 RAG FLOW DEBUG: This is a TEXT-based message (not voice input)');
+      console.log('🔍 RAG FLOW DEBUG: Chatbot behavior_config:', JSON.stringify(chatbot?.behavior_config, null, 2));
+      console.log('🔍 RAG FLOW DEBUG: Expected: RAG should work normally for text messages regardless of voice setting');
       
       const response = await apiService.testChatbot(chatbot.id, {
         message: currentInput,
         conversation_history: conversationHistory,
       });
 
-      console.log('🎯 RAG DEBUG: Got chatbot response:', {
+      console.log('🔍 RAG FLOW DEBUG: ==================== RESPONSE RECEIVED ====================');
+      console.log('🎯 RAG FLOW DEBUG: Got chatbot response:', {
         hasResponse: !!response?.response,
         responseLength: response?.response?.length || 0,
         ragEnabled: response?.rag_enabled,
         contextCount: response?.context_count || 0,
         model: response?.model,
+        responsePreview: response?.response?.substring(0, 100) + '...',
         fullResponse: response
       });
+      console.log('🔍 RAG FLOW DEBUG: RAG Analysis:');
+      console.log('   - RAG Enabled:', response?.rag_enabled);
+      console.log('   - Context Count:', response?.context_count || 0);
+      console.log('   - Contains PDF content:', response?.response?.includes('Monday') || response?.response?.includes('business hours'));
+      console.log('   - Is generic response:', response?.response?.includes('24 hours') || response?.response?.includes('Walmart'));
       
       if (!response || !response.response) {
         throw new Error('Invalid response from chatbot API');
@@ -724,12 +744,17 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
 
       // Trigger voice response if voice is enabled (using shouldUseVoice for reliability)
       const shouldUseVoice = chatbot?.behavior_config?.enableVoice || false;
-      console.log('🔊 TEXT DEBUG: Text message response completed:', {
+      console.log('🔍 RAG FLOW DEBUG: ==================== VOICE PROCESSING CHECK ====================');
+      console.log('🔊 RAG FLOW DEBUG: Text message response completed:', {
         voiceEnabled,
         shouldUseVoice,
         responseLength: response.response?.length,
         behaviorConfig: chatbot?.behavior_config
       });
+      console.log('🔍 RAG FLOW DEBUG: Voice processing decision:');
+      console.log('   - Voice enabled in settings:', voiceEnabled);
+      console.log('   - Should use voice for response:', shouldUseVoice);
+      console.log('   - Will trigger TTS:', shouldUseVoice && response.response);
       
       if (shouldUseVoice && response.response) {
         console.log('🔊 TEXT DEBUG: ✅ FORCING speech synthesis for text message (bypassing state issue)');

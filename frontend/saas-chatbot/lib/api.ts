@@ -61,6 +61,9 @@ export interface TestChatRequest {
 export interface TestChatResponse {
   response: string;
   conversation_id: string;
+  rag_enabled?: boolean;
+  context_count?: number;
+  model?: string;
 }
 
 class ApiService {

@@ -475,46 +475,101 @@ class DocumentService:
     async def process_chatbot_documents(self, chatbot_id: str, user_id: str) -> Dict[str, Any]:
         """
         Process all unprocessed documents for a chatbot (generate embeddings)
-        Called when chatbot settings are saved
+        Called when chatbot settings are saved with enhanced duplicate prevention
         """
         try:
-            print(f"🚀 RAG DEBUG: Starting batch processing for chatbot {chatbot_id}")
+            logger.info(f"🚀 EMBEDDING: Starting batch processing for chatbot {chatbot_id}")
             
-            # Get all unprocessed documents for this chatbot
-            response = self.supabase.table("documents") \
+            # Get all documents for this chatbot to analyze state
+            all_docs_response = self.supabase.table("documents") \
                 .select("*, chatbots!inner(user_id)") \
                 .eq("chatbot_id", chatbot_id) \
                 .eq("chatbots.user_id", user_id) \
-                .eq("processed", False) \
                 .execute()
             
-            unprocessed_docs = response.data
-            print(f"📋 RAG DEBUG: Found {len(unprocessed_docs)} unprocessed documents")
+            all_docs = all_docs_response.data
+            processed_docs = [doc for doc in all_docs if doc.get("processed", False)]
+            unprocessed_docs = [doc for doc in all_docs if not doc.get("processed", False)]
+            
+            logger.info(f"📊 EMBEDDING: Document analysis - Total: {len(all_docs)}, Processed: {len(processed_docs)}, Pending: {len(unprocessed_docs)}")
             
             if not unprocessed_docs:
-                print(f"✅ RAG DEBUG: No documents to process")
+                logger.info(f"✅ EMBEDDING: No new documents to process")
+                
+                # Count existing embeddings
+                existing_embeddings = 0
+                for doc in processed_docs:
+                    embedding_response = self.supabase.table("vector_embeddings") \
+                        .select("id", count="exact") \
+                        .eq("document_id", doc["id"]) \
+                        .execute()
+                    existing_embeddings += embedding_response.count or 0
+                
                 return {
                     "processed_count": 0,
-                    "total_embeddings": 0,
-                    "success": True
+                    "total_embeddings": existing_embeddings,
+                    "existing_embeddings": existing_embeddings,
+                    "success": True,
+                    "message": f"All {len(processed_docs)} documents already processed"
                 }
             
             total_embeddings = 0
             processed_count = 0
+            errors = []
             
-            for doc in unprocessed_docs:
+            logger.info(f"🔄 EMBEDDING: Processing {len(unprocessed_docs)} documents...")
+            
+            for i, doc in enumerate(unprocessed_docs, 1):
                 document_id = doc["id"]
                 filename = doc["filename"]
+                content_hash = doc.get("content_hash")
                 extracted_text = doc.get("extracted_text")
                 
-                print(f"🔄 RAG DEBUG: Processing document: {filename} (ID: {document_id})")
+                logger.info(f"🔄 EMBEDDING: Processing document {i}/{len(unprocessed_docs)}: {filename}")
+                
+                # Enhanced duplicate prevention: check content hash
+                if content_hash:
+                    duplicate_check = self.supabase.table("documents") \
+                        .select("id, processed") \
+                        .eq("content_hash", content_hash) \
+                        .eq("processed", True) \
+                        .neq("id", document_id) \
+                        .execute()
+                    
+                    if duplicate_check.data:
+                        logger.info(f"⚠️ EMBEDDING: Duplicate content detected for {filename} (hash: {content_hash[:8]}...), marking as processed")
+                        # Mark as processed without creating new embeddings
+                        self.supabase.table("documents") \
+                            .update({"processed": True}) \
+                            .eq("id", document_id) \
+                            .execute()
+                        processed_count += 1
+                        continue
                 
                 if not extracted_text:
-                    print(f"⚠️ RAG DEBUG: No extracted text found for {filename}, skipping")
+                    logger.warning(f"⚠️ EMBEDDING: No extracted text found for {filename}, skipping")
+                    errors.append(f"{filename}: No extracted text")
                     continue
                 
                 try:
+                    # Double-check for existing embeddings (safety net)
+                    existing_embeddings_check = self.supabase.table("vector_embeddings") \
+                        .select("id", count="exact") \
+                        .eq("document_id", document_id) \
+                        .execute()
+                    
+                    if existing_embeddings_check.count and existing_embeddings_check.count > 0:
+                        logger.info(f"⚠️ EMBEDDING: Embeddings already exist for {filename}, marking as processed")
+                        self.supabase.table("documents") \
+                            .update({"processed": True}) \
+                            .eq("id", document_id) \
+                            .execute()
+                        processed_count += 1
+                        total_embeddings += existing_embeddings_check.count
+                        continue
+                    
                     # Process document content (create embeddings)
+                    logger.info(f"🔄 EMBEDDING: Generating embeddings for {filename}...")
                     await self._process_document_content(document_id, extracted_text)
                     
                     # Update processed status
@@ -534,18 +589,27 @@ class DocumentService:
                     doc_embeddings = embedding_response.count or 0
                     total_embeddings += doc_embeddings
                     
-                    print(f"✅ RAG DEBUG: Processed {filename} - created {doc_embeddings} embeddings")
+                    logger.info(f"✅ EMBEDDING: Processed {filename} - created {doc_embeddings} embeddings")
                     
                 except Exception as e:
-                    print(f"💥 RAG DEBUG: Failed to process {filename}: {str(e)}")
+                    error_msg = f"Failed to process {filename}: {str(e)}"
+                    logger.error(f"💥 EMBEDDING: {error_msg}")
+                    errors.append(error_msg)
                     continue
             
-            print(f"🎉 RAG DEBUG: Batch processing complete - {processed_count} documents, {total_embeddings} embeddings")
+            logger.info(f"🎉 EMBEDDING: Batch processing complete - {processed_count} documents processed, {total_embeddings} embeddings created")
+            
+            if errors:
+                logger.warning(f"⚠️ EMBEDDING: {len(errors)} errors occurred during processing")
             
             return {
                 "processed_count": processed_count,
                 "total_embeddings": total_embeddings,
-                "success": True
+                "success": True,
+                "errors": errors,
+                "total_documents": len(all_docs),
+                "already_processed": len(processed_docs),
+                "message": f"Processed {processed_count} new documents, created {total_embeddings} embeddings"
             }
             
         except Exception as e:

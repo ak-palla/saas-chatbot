@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug: Voice vs Text RAG Comparison</title>
+    <style>
+        body { font-family: monospace; margin: 20px; }
+        .section { border: 1px solid #ccc; margin: 10px 0; padding: 10px; }
+        .text-only { background-color: #e8f5e8; }
+        .voice-enabled { background-color: #ffe8e8; }
+        button { margin: 5px; padding: 10px; }
+        .result { background-color: #f5f5f5; padding: 10px; margin: 10px 0; }
+        pre { white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug: Voice vs Text RAG Comparison</h1>
+    
+    <div class="section text-only">
+        <h2>✅ Text-Only Chatbot (Working RAG)</h2>
+        <p>Test with a chatbot that has voice disabled</p>
+        <input type="text" id="textOnlyChatbotId" placeholder="Text-only chatbot ID" style="width: 300px;">
+        <button onclick="testTextOnlyChatbot()">Test RAG</button>
+        <div id="textOnlyResult" class="result"></div>
+    </div>
+    
+    <div class="section voice-enabled">
+        <h2>❌ Voice-Enabled Chatbot (Broken RAG)</h2>
+        <p>Test with a chatbot that has voice enabled</p>
+        <input type="text" id="voiceEnabledChatbotId" placeholder="Voice-enabled chatbot ID" style="width: 300px;">
+        <button onclick="testVoiceEnabledChatbot()">Test RAG</button>
+        <div id="voiceEnabledResult" class="result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>📊 Comparison Results</h2>
+        <div id="comparisonResult" class="result"></div>
+    </div>
+
+    <script>
+        const testQuery = "What are your customer support business hours?";
+        
+        async function testChatbot(chatbotId, type) {
+            console.log(`🧪 Testing ${type} chatbot: ${chatbotId}`);
+            
+            try {
+                const response = await fetch(`http://localhost:8000/api/v1/chatbots/${chatbotId}/test-chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: testQuery,
+                        conversation_history: []
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log(`📊 ${type} Response:`, data);
+                
+                return {
+                    success: true,
+                    response: data.response,
+                    ragEnabled: data.rag_enabled,
+                    contextCount: data.context_count || 0,
+                    model: data.model,
+                    containsBusinessHours: data.response?.includes('Monday') || data.response?.includes('9 AM') || data.response?.includes('6 PM'),
+                    isGeneric: data.response?.includes('24 hours') || data.response?.includes('Walmart')
+                };
+                
+            } catch (error) {
+                console.error(`❌ ${type} test failed:`, error);
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+        
+        async function testTextOnlyChatbot() {
+            const chatbotId = document.getElementById('textOnlyChatbotId').value;
+            if (!chatbotId) {
+                alert('Please enter a text-only chatbot ID');
+                return;
+            }
+            
+            const result = await testChatbot(chatbotId, 'Text-Only');
+            
+            document.getElementById('textOnlyResult').innerHTML = `
+                <h3>Text-Only Results:</h3>
+                <pre>${JSON.stringify(result, null, 2)}</pre>
+            `;
+            
+            updateComparison();
+        }
+        
+        async function testVoiceEnabledChatbot() {
+            const chatbotId = document.getElementById('voiceEnabledChatbotId').value;
+            if (!chatbotId) {
+                alert('Please enter a voice-enabled chatbot ID');
+                return;
+            }
+            
+            const result = await testChatbot(chatbotId, 'Voice-Enabled');
+            
+            document.getElementById('voiceEnabledResult').innerHTML = `
+                <h3>Voice-Enabled Results:</h3>
+                <pre>${JSON.stringify(result, null, 2)}</pre>
+            `;
+            
+            updateComparison();
+        }
+        
+        function updateComparison() {
+            // This would compare the results when both are available
+            document.getElementById('comparisonResult').innerHTML = `
+                <h3>Comparison Analysis:</h3>
+                <p>Run both tests above to see detailed comparison</p>
+                <p><strong>Expected Result:</strong></p>
+                <ul>
+                    <li>Text-Only: Should return business hours from PDF (Monday-Friday 9AM-6PM)</li>
+                    <li>Voice-Enabled: Currently returns generic response (24/7 Walmart)</li>
+                </ul>
+                <p><strong>Key Indicators:</strong></p>
+                <ul>
+                    <li><code>rag_enabled</code>: Should be true for both</li>
+                    <li><code>context_count</code>: Should be > 0 for both</li>
+                    <li><code>containsBusinessHours</code>: Should be true for both</li>
+                    <li><code>isGeneric</code>: Should be false for both</li>
+                </ul>
+            `;
+        }
+        
+        // Pre-populate with known test chatbot ID
+        document.getElementById('voiceEnabledChatbotId').value = '5e69ab00-d866-46ab-b20b-fec3338a0895';
+        
+        console.log('🧪 RAG Debug Tool Loaded');
+        console.log('📝 Test query:', testQuery);
+    </script>
+</body>
+</html>

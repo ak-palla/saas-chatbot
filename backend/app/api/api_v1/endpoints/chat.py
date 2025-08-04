@@ -43,11 +43,22 @@ async def chat_completion(
                 detail="Message too long (max 10,000 characters)"
             )
         
+        # Debug logging for RAG functionality
+        print(f"🔍 RAG DEBUG (ChatAPI): Processing chat completion request")
+        print(f"🔍 RAG DEBUG (ChatAPI): chatbot_id={request.chatbot_id}")
+        print(f"🔍 RAG DEBUG (ChatAPI): user_id={current_user['id']}")
+        print(f"🔍 RAG DEBUG (ChatAPI): use_rag={request.use_rag}")
+        print(f"🔍 RAG DEBUG (ChatAPI): stream={request.stream}")
+        print(f"🔍 RAG DEBUG (ChatAPI): message='{request.message[:100]}...'")
+        
         # Process chat message
         response = await message_service.process_chat_message(
             request=request,
             user_id=current_user["id"]
         )
+        
+        print(f"🔍 RAG DEBUG (ChatAPI): Response generated with rag_enabled={response.rag_enabled}")
+        print(f"🔍 RAG DEBUG (ChatAPI): Context count={response.context_count}")
         
         return response
         

@@ -118,14 +118,64 @@ export function ChatbotSettings({ chatbot }: ChatbotSettingsProps) {
       console.log('💾 VOICE DEBUG: enableVoice in update data:', updateData.behavior_config?.enableVoice);
 
       console.log('📡 VOICE DEBUG: Sending update request to backend...');
+      console.log('🔄 EMBEDDING: Starting save with automatic embedding generation...');
+      
       const response = await apiService.updateChatbot(chatbot.id, updateData);
       console.log('✅ VOICE DEBUG: Settings saved successfully');
       console.log('✅ VOICE DEBUG: Backend response:', response);
       
-      toast({
-        title: "Settings Updated",
-        description: "Your chatbot settings have been saved successfully.",
-      });
+      // Handle embedding stats from response
+      const embeddingStats = response.embedding_stats;
+      console.log('📊 EMBEDDING: Processing results:', embeddingStats);
+      
+      if (embeddingStats) {
+        if (embeddingStats.success) {
+          const { processed_count, total_embeddings, message, already_processed } = embeddingStats;
+          
+          if (processed_count > 0) {
+            // New documents were processed
+            toast({
+              title: "Settings Updated with Document Processing",
+              description: `${message || `Processed ${processed_count} documents and generated ${total_embeddings} embeddings`}`,
+            });
+          } else if (already_processed && already_processed > 0) {
+            // No new documents, but existing ones found
+            toast({
+              title: "Settings Updated",
+              description: `Settings saved. ${embeddingStats.message || `${already_processed} documents already processed`}`,
+            });
+          } else {
+            // No documents found
+            toast({
+              title: "Settings Updated",
+              description: "Settings saved successfully. No documents found to process.",
+            });
+          }
+        } else {
+          // Embedding processing failed
+          toast({
+            title: "Settings Updated (Embedding Warning)",
+            description: `Settings saved, but document processing failed: ${embeddingStats.error}`,
+            variant: "destructive",
+          });
+        }
+      } else {
+        // No embedding stats (shouldn't happen with new implementation)
+        toast({
+          title: "Settings Updated",
+          description: "Your chatbot settings have been saved successfully.",
+        });
+      }
+      
+      // Refresh documents list to show updated processing status
+      if (embeddingStats && embeddingStats.processed_count > 0) {
+        console.log('🔄 EMBEDDING: Refreshing documents list...');
+        try {
+          await loadDocuments();
+        } catch (refreshError) {
+          console.error('⚠️ EMBEDDING: Failed to refresh documents:', refreshError);
+        }
+      }
       
     } catch (error) {
       console.error('💥 RAG DEBUG: Settings save error:', error);
@@ -741,9 +791,13 @@ export function ChatbotSettings({ chatbot }: ChatbotSettingsProps) {
                               <span>{formatFileSize(doc.file_size || 0)}</span>
                               <span>
                                 {doc.processed ? (
-                                  <span className="text-green-600">✓ Processed</span>
+                                  <Badge variant="secondary" className="text-green-600 bg-green-50">
+                                    ✓ Embeddings Ready
+                                  </Badge>
                                 ) : (
-                                  <span className="text-yellow-600">Processing...</span>
+                                  <Badge variant="outline" className="text-yellow-600">
+                                    ⏳ Pending Processing
+                                  </Badge>
                                 )}
                               </span>
                             </div>
@@ -782,8 +836,16 @@ export function ChatbotSettings({ chatbot }: ChatbotSettingsProps) {
         </Button>
         <Button onClick={handleSave} disabled={isLoading} className="flex items-center gap-2">
           <Save className="h-4 w-4" />
-          {isLoading ? 'Saving...' : 'Save Changes'}
+          {isLoading ? 'Saving & Processing Embeddings...' : 'Save Changes'}
         </Button>
+        
+        {/* Embedding Processing Status */}
+        {isLoading && (
+          <div className="mt-2 text-xs text-muted-foreground">
+            <p>💡 Generating vector embeddings for uploaded documents...</p>
+            <p>This ensures your RAG system has the latest content.</p>
+          </div>
+        )}
       </div>
     </div>
   );

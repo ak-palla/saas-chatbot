@@ -4,6 +4,7 @@ import logging
 from app.models.chatbot import Chatbot, ChatbotCreate, ChatbotUpdate
 from app.core.database import get_supabase_admin
 from app.core.config import settings  # Import settings directly
+from app.services.document_service import document_service
 from pydantic import BaseModel
 import os
 from groq import Groq
@@ -152,7 +153,38 @@ async def update_chatbot(chatbot_id: str, chatbot_update: ChatbotUpdate, user_em
         logger.info(f"✅ VOICE DEBUG: Chatbot updated successfully")
         logger.info(f"✅ VOICE DEBUG: Updated chatbot data: {response.data[0]}")
         logger.info(f"✅ VOICE DEBUG: Updated behavior_config: {response.data[0].get('behavior_config')}")
-        return response.data[0]
+        
+        updated_chatbot = response.data[0]
+        
+        # Process documents and generate embeddings after chatbot update
+        logger.info(f"🔄 EMBEDDING: Starting automatic document processing for chatbot {chatbot_id}")
+        logger.info(f"🔍 EMBEDDING DEBUG: user_id type: {type(user_id)}")
+        logger.info(f"🔍 EMBEDDING DEBUG: user_id value: {user_id}")
+        logger.info(f"🔍 EMBEDDING DEBUG: chatbot_id type: {type(chatbot_id)}")
+        logger.info(f"🔍 EMBEDDING DEBUG: chatbot_id value: {chatbot_id}")
+        logger.info(f"🔍 EMBEDDING DEBUG: document_service type: {type(document_service)}")
+        logger.info(f"🔍 EMBEDDING DEBUG: method exists: {hasattr(document_service, 'process_chatbot_documents')}")
+        
+        try:
+            logger.info(f"🔍 EMBEDDING DEBUG: About to call: document_service.process_chatbot_documents('{chatbot_id}', '{user_id}')")
+            processing_result = await document_service.process_chatbot_documents(chatbot_id, user_id)
+            logger.info(f"✅ EMBEDDING: Document processing completed: {processing_result}")
+            
+            # Add embedding stats to the response
+            updated_chatbot["embedding_stats"] = processing_result
+            
+        except Exception as embed_error:
+            logger.error(f"⚠️ EMBEDDING: Document processing failed: {str(embed_error)}")
+            # Don't fail the chatbot update if embedding processing fails
+            updated_chatbot["embedding_stats"] = {
+                "success": False,
+                "error": str(embed_error),
+                "processed_count": 0,
+                "total_embeddings": 0
+            }
+        
+        return updated_chatbot
+        
     except Exception as e:
         logger.error(f"💥 VOICE DEBUG: Error updating chatbot: {str(e)}")
         logger.error(f"💥 VOICE DEBUG: Error type: {type(e)}")
@@ -199,6 +231,9 @@ class TestChatRequest(BaseModel):
 class TestChatResponse(BaseModel):
     response: str
     conversation_id: str = "test"
+    rag_enabled: bool = False
+    context_count: int = 0
+    model: str = "unknown"
 
 
 @router.post("/{chatbot_id}/test-chat", response_model=TestChatResponse)
@@ -269,7 +304,10 @@ async def test_chatbot_chat(chatbot_id: str, chat_request: TestChatRequest, user
         
         return TestChatResponse(
             response=response["content"],
-            conversation_id="test"
+            conversation_id="test",
+            rag_enabled=response.get("rag_enabled", False),
+            context_count=response.get("context_count", 0),
+            model=response.get("model", "unknown")
         )
         
     except HTTPException:

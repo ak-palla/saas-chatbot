@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manual Document Processing Test</title>
+    <style>
+        body { font-family: monospace; margin: 20px; }
+        .result { background-color: #f5f5f5; padding: 10px; margin: 10px 0; }
+        button { margin: 5px; padding: 10px; }
+        pre { white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Manual Document Processing Test</h1>
+    
+    <div>
+        <h2>Step 1: Check Current Document Status</h2>
+        <button onclick="checkDocuments()">Check Documents</button>
+        <div id="documentsResult" class="result"></div>
+    </div>
+    
+    <div>
+        <h2>Step 2: Trigger Manual Processing</h2>
+        <button onclick="triggerProcessing()">Process Documents</button>
+        <div id="processingResult" class="result"></div>
+    </div>
+    
+    <div>
+        <h2>Step 3: Test RAG After Processing</h2>
+        <button onclick="testRAG()">Test RAG</button>
+        <div id="ragResult" class="result"></div>
+    </div>
+
+    <script>
+        const CHATBOT_ID = '5e69ab00-d866-46ab-b20b-fec3338a0895';
+        const USER_EMAIL = 'akhilpalla@webuildtrades.co';
+        const API_BASE = 'http://localhost:8000';
+        
+        async function checkDocuments() {
+            console.log('🔍 Checking documents for chatbot:', CHATBOT_ID);
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/documents?user_email=${USER_EMAIL}`);
+                const documents = await response.json();
+                
+                const chatbotDocs = documents.filter(doc => doc.chatbot_id === CHATBOT_ID);
+                
+                document.getElementById('documentsResult').innerHTML = `
+                    <h3>Documents for Chatbot ${CHATBOT_ID}:</h3>
+                    <pre>${JSON.stringify(chatbotDocs, null, 2)}</pre>
+                `;
+                
+                console.log('📄 Documents:', chatbotDocs);
+                return chatbotDocs;
+                
+            } catch (error) {
+                console.error('❌ Error checking documents:', error);
+                document.getElementById('documentsResult').innerHTML = `
+                    <h3>❌ Error:</h3>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+        
+        async function triggerProcessing() {
+            console.log('🔄 Triggering document processing for chatbot:', CHATBOT_ID);
+            
+            try {
+                // Call the chatbot update endpoint to trigger auto-embedding
+                const response = await fetch(`${API_BASE}/api/v1/chatbots/${CHATBOT_ID}?user_email=${USER_EMAIL}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        // Just update with current data to trigger processing
+                        name: 'voice-agent',
+                        description: 'This voice assistant helps customers',
+                        system_prompt: 'You are a helpful assistant',
+                        is_active: true
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                document.getElementById('processingResult').innerHTML = `
+                    <h3>✅ Processing Triggered:</h3>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                `;
+                
+                console.log('✅ Processing result:', result);
+                
+                // Check if embedding stats are included
+                if (result.embedding_stats) {
+                    console.log('📊 Embedding stats:', result.embedding_stats);
+                } else {
+                    console.log('⚠️ No embedding stats in response');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error triggering processing:', error);
+                document.getElementById('processingResult').innerHTML = `
+                    <h3>❌ Error:</h3>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+        
+        async function testRAG() {
+            console.log('🧪 Testing RAG after processing');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/chatbots/${CHATBOT_ID}/test-chat?user_email=${USER_EMAIL}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: 'What are your customer support business hours?',
+                        conversation_history: []
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                document.getElementById('ragResult').innerHTML = `
+                    <h3>🎯 RAG Test Result:</h3>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                    <h4>Analysis:</h4>
+                    <ul>
+                        <li>RAG Enabled: ${result.rag_enabled ? '✅ YES' : '❌ NO'}</li>
+                        <li>Context Count: ${result.context_count || 0}</li>
+                        <li>Contains Business Hours: ${result.response.includes('Monday') || result.response.includes('9 AM') ? '✅ YES' : '❌ NO'}</li>
+                        <li>Is Generic: ${result.response.includes('24 hours') || result.response.includes('Walmart') ? '⚠️ YES' : '✅ NO'}</li>
+                    </ul>
+                `;
+                
+                console.log('🎯 RAG test result:', result);
+                
+            } catch (error) {
+                console.error('❌ Error testing RAG:', error);
+                document.getElementById('ragResult').innerHTML = `
+                    <h3>❌ Error:</h3>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+        
+        console.log('🧪 Manual processing test page loaded');
+        console.log('📋 Chatbot ID:', CHATBOT_ID);
+        console.log('👤 User Email:', USER_EMAIL);
+    </script>
+</body>
+</html>

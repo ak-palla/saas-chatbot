@@ -44,8 +44,20 @@ class MessageService:
         try:
             start_time = datetime.now()
             
+            # Debug logging for RAG functionality
+            logger.info(f"🔍 RAG DEBUG (MessageService): Processing chat message")
+            logger.info(f"🔍 RAG DEBUG (MessageService): chatbot_id={request.chatbot_id}")
+            logger.info(f"🔍 RAG DEBUG (MessageService): user_id={user_id}")
+            logger.info(f"🔍 RAG DEBUG (MessageService): use_rag={request.use_rag}")
+            logger.info(f"🔍 RAG DEBUG (MessageService): stream={request.stream}")
+            logger.info(f"🔍 RAG DEBUG (MessageService): message='{request.message[:100]}...'")
+            
             # Verify chatbot ownership
             chatbot = await self._verify_chatbot_access(request.chatbot_id, user_id)
+            
+            # Log chatbot configuration
+            logger.info(f"🔍 RAG DEBUG (MessageService): Chatbot loaded - agent_enabled={chatbot.get('agent_enabled', True)}")
+            logger.info(f"🔍 RAG DEBUG (MessageService): Chatbot name={chatbot.get('name', 'Unknown')}")
             
             # Get or create conversation
             conversation = await self._get_or_create_conversation(
@@ -67,12 +79,14 @@ class MessageService:
             
             # Generate AI response
             if chatbot.get("agent_enabled", True):  # Use agent by default
+                logger.info(f"🔍 RAG DEBUG (MessageService): Using AGENT response path")
                 response_data = await self._generate_agent_response(
                     request=request,
                     chatbot=chatbot,
                     conversation_history=conversation_history
                 )
             else:
+                logger.info(f"🔍 RAG DEBUG (MessageService): Using LLM response path")
                 response_data = await self._generate_llm_response(
                     request=request,
                     chatbot=chatbot,
@@ -345,13 +359,14 @@ class MessageService:
     ) -> Dict[str, Any]:
         """Generate response using LLM with optional RAG"""
         try:
-            print(f"🤖 RAG DEBUG: Starting LLM response generation")
-            print(f"📊 RAG DEBUG: RAG enabled: {request.use_rag}")
-            print(f"🎯 RAG DEBUG: Chatbot ID: {request.chatbot_id}")
-            print(f"💬 RAG DEBUG: User message: '{request.message}'")
+            logger.info(f"🔍 RAG FLOW DEBUG: ==================== LLM PROCESSING START ====================")
+            logger.info(f"🤖 RAG FLOW DEBUG: Starting LLM response generation")
+            logger.info(f"📊 RAG FLOW DEBUG: RAG enabled: {request.use_rag}")
+            logger.info(f"🎯 RAG FLOW DEBUG: Chatbot ID: {request.chatbot_id}")
+            logger.info(f"💬 RAG FLOW DEBUG: User message: '{request.message}'")
             
             if request.use_rag:
-                print(f"🔍 RAG DEBUG: RAG mode - retrieving relevant context...")
+                logger.info(f"🔍 RAG FLOW DEBUG: RAG mode - retrieving relevant context...")
                 
                 # Retrieve relevant context
                 contexts, context_metadata = await self.vector_store_service.retrieve_relevant_context(
@@ -360,13 +375,20 @@ class MessageService:
                     max_contexts=3
                 )
                 
-                print(f"📚 RAG DEBUG: Retrieved {len(contexts)} context chunks")
+                logger.info(f"📚 RAG FLOW DEBUG: Retrieved {len(contexts)} context chunks")
                 if contexts:
                     for i, context in enumerate(contexts):
-                        print(f"📄 RAG DEBUG: Context {i+1} preview: {context[:150]}...")
-                        print(f"📊 RAG DEBUG: Context {i+1} metadata: {context_metadata[i] if i < len(context_metadata) else 'N/A'}")
+                        logger.info(f"📄 RAG FLOW DEBUG: Context {i+1} preview: {context[:150]}...")
+                        logger.info(f"📊 RAG FLOW DEBUG: Context {i+1} metadata: {context_metadata[i] if i < len(context_metadata) else 'N/A'}")
+                        
+                        # Check if this context contains business hours info
+                        context_lower = context.lower()
+                        has_hours = any(keyword in context_lower for keyword in ['monday', 'business hours', 'hours', '9 am', '6 pm'])
+                        logger.info(f"🔍 RAG FLOW DEBUG: Context {i+1} contains business hours: {has_hours}")
                 else:
-                    print(f"⚠️ RAG DEBUG: No relevant context found - falling back to standard response")
+                    logger.warning(f"⚠️ RAG FLOW DEBUG: NO CONTEXTS RETRIEVED - This is why RAG is failing!")
+                    logger.warning(f"⚠️ RAG FLOW DEBUG: Query was: '{request.message}'")
+                    logger.warning(f"⚠️ RAG FLOW DEBUG: Chatbot ID: {request.chatbot_id}")
                 
                 if contexts:
                     print(f"🧠 RAG DEBUG: Generating RAG-enhanced response with context...")

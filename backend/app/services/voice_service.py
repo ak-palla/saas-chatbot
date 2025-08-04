@@ -129,11 +129,21 @@ class VoiceService:
                 stream=False  # Don't stream for voice
             )
             
+            logger.info(f"🔍 RAG DEBUG (Voice): Creating chat request with RAG enabled")
+            logger.info(f"🔍 RAG DEBUG (Voice): chatbot_id={chatbot_id}, user_id={user_id}")
+            logger.info(f"🔍 RAG DEBUG (Voice): message='{transcribed_text[:100]}...'")
+            logger.info(f"🔍 RAG DEBUG (Voice): use_rag={chat_request.use_rag}")
+            
             # Process with LLM
             chat_response = await message_service.process_chat_message(
                 request=chat_request,
                 user_id=user_id
             )
+            
+            logger.info(f"🔍 RAG DEBUG (Voice): LLM response received")
+            logger.info(f"🔍 RAG DEBUG (Voice): rag_enabled={chat_response.rag_enabled}")
+            logger.info(f"🔍 RAG DEBUG (Voice): context_count={chat_response.context_count}")
+            logger.info(f"🔍 RAG DEBUG (Voice): model={chat_response.model}")
             
             llm_time = time.time() - llm_start
             response_text = chat_response.content
