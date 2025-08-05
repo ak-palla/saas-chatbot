@@ -725,12 +725,7 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
         responseLength: response?.response?.length || 0,
         ragEnabled: response?.rag_enabled,
         contextCount: response?.context_count || 0,
-<<<<<<< Updated upstream
-        model: response?.model,
-        responsePreview: response?.response?.substring(0, 100) + '...',
-=======
         model: response?.model_used,
->>>>>>> Stashed changes
         fullResponse: response
       });
       console.log('🔍 RAG FLOW DEBUG: RAG Analysis:');

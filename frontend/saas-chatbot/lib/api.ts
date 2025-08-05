@@ -63,11 +63,7 @@ export interface TestChatResponse {
   conversation_id: string;
   rag_enabled?: boolean;
   context_count?: number;
-<<<<<<< Updated upstream
-  model?: string;
-=======
   model_used?: string;
->>>>>>> Stashed changes
 }
 
 class ApiService {

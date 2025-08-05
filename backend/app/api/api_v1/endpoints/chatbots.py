@@ -286,11 +286,7 @@ class TestChatResponse(BaseModel):
     conversation_id: str = "test"
     rag_enabled: bool = False
     context_count: int = 0
-<<<<<<< Updated upstream
-    model: str = "unknown"
-=======
     model_used: Optional[str] = None
->>>>>>> Stashed changes
 
 
 @router.post("/{chatbot_id}/test-chat", response_model=TestChatResponse)
@@ -364,11 +360,7 @@ async def test_chatbot_chat(chatbot_id: str, chat_request: TestChatRequest, user
             conversation_id="test",
             rag_enabled=response.get("rag_enabled", False),
             context_count=response.get("context_count", 0),
-<<<<<<< Updated upstream
-            model=response.get("model", "unknown")
-=======
             model_used=response.get("model", chat_req.model)
->>>>>>> Stashed changes
         )
         
     except HTTPException:

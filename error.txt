@@ -1,445 +1,85 @@
-main-app.js?v=1754306822619:1126 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
-D:\chat_service\frontend\saas-chatbot\app\dashboard\chatbots\[id]\page.tsx:29 🔍 Fetching chatbot details for ID: 5e69ab00-d866-46ab-b20b-fec3338a0895
-content_script.js:2726 {side: 'content-script-global', packet: {…}}
-e.<computed> @ content_script.js:2726
-(anonymous) @ content_script.js:411
-(anonymous) @ content_script.js:2
-u @ content_script.js:2
-d @ content_script.js:411
-messageResponder @ content_script.js:411
-onMessage @ browser-polyfill.js:1079
-content_script.js:411 Uncaught (in promise) Error: No registered remote function called handleHistoryStateUpdate
-    at g.<anonymous> (content_script.js:411:3985)
-    at Generator.next (<anonymous>)
-    at content_script.js:2:21773
-    at new Promise (<anonymous>)
-    at u (content_script.js:2:21569)
-    at d (content_script.js:411:3521)
-    at messageResponder (content_script.js:411:4916)
-    at onMessage (browser-polyfill.js:1079:22)
-(anonymous) @ content_script.js:411
-(anonymous) @ content_script.js:2
-u @ content_script.js:2
-d @ content_script.js:411
-messageResponder @ content_script.js:411
-onMessage @ browser-polyfill.js:1079
-D:\chat_service\frontend\saas-chatbot\lib\api.ts:83 👤 Current user email: akhilpalla@webuildtrades.co
-D:\chat_service\frontend\saas-chatbot\lib\api.ts:114 🚀 API Request (Supabase-native): {url: 'http://localhost:8000/api/v1/chatbots/5e69ab00-d86…338a0895?user_email=akhilpalla%40webuildtrades.co', method: 'GET', userEmail: 'akhilpalla@webuildtrades.co', body: null}
-D:\chat_service\frontend\saas-chatbot\lib\api.ts:123 📡 Attempt 1/4 - Fetching: http://localhost:8000/api/v1/chatbots/5e69ab00-d866-46ab-b20b-fec3338a0895?user_email=akhilpalla%40webuildtrades.co
-D:\chat_service\frontend\saas-chatbot\lib\api.ts:126 ✅ Response received: {status: 200, statusText: 'OK', headers: {…}}
-D:\chat_service\frontend\saas-chatbot\lib\api.ts:154 📦 Response data: {name: 'voice-agent ', description: 'This voice assistant helps customers by naturally …fering a seamless, human-like support experience.', system_prompt: 'You are a helpful, conversational voice assistant …y offer to connect the customer to a human agent.', model: 'llama-3.1-8b-instant', appearance_config: {…}, …}
-D:\chat_service\frontend\saas-chatbot\app\dashboard\chatbots\[id]\page.tsx:31 ✅ Chatbot data loaded: {name: 'voice-agent ', description: 'This voice assistant helps customers by naturally …fering a seamless, human-like support experience.', system_prompt: 'You are a helpful, conversational voice assistant …y offer to connect the customer to a human agent.', model: 'llama-3.1-8b-instant', appearance_config: {…}, …}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:57 🔍 VOICE DEBUG: ==================== CHATBOT ANALYSIS ====================
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:58 🔍 VOICE DEBUG: Checking chatbot voice settings...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:59 🔍 VOICE DEBUG: Full chatbot object: {
-  "name": "voice-agent ",
-  "description": "This voice assistant helps customers by naturally engaging in conversations to answer queries, resolve issues, and provide clear, detailed information about our products and services—offering a seamless, human-like support experience.",
-  "system_prompt": "You are a helpful, conversational voice assistant for Walmart. Speak in a clear, friendly, and professional tone. Your role is to assist customers by naturally answering their questions, resolving their concerns, and providing accurate, detailed information about our products and services. Keep responses concise, engaging, and easy to understand in a spoken format. Use simple, conversational language and confirm understanding when needed. If you're unsure or the request is beyond your capabilities, politely offer to connect the customer to a human agent.",
-  "model": "llama-3.1-8b-instant",
-  "appearance_config": {
-    "theme": "light",
-    "botName": "Assistant",
-    "position": "bottom-right",
-    "avatarUrl": "",
-    "showAvatar": true,
-    "primaryColor": "#3b82f6",
-    "welcomeTitle": "Welcome",
-    "greetingMessage": "Hello! How can I help you today?"
-  },
-  "behavior_config": {
-    "maxTokens": 1000,
-    "enableEmoji": true,
-    "enableVoice": true,
-    "temperature": 0.7,
-    "enableTypingIndicator": true
-  },
-  "is_active": true,
-  "id": "5e69ab00-d866-46ab-b20b-fec3338a0895",
-  "user_id": "6ff34613-5262-4073-b0a1-68b36873e3db",
-  "created_at": "2025-08-01T10:56:34.844446Z",
-  "updated_at": "2025-08-04T11:10:21.331998Z"
-}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:60 🔍 VOICE DEBUG: chatbot exists: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:61 🔍 VOICE DEBUG: chatbot.id: 5e69ab00-d866-46ab-b20b-fec3338a0895
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:62 🔍 VOICE DEBUG: behavior_config exists: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:63 🔍 VOICE DEBUG: behavior_config type: object
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:64 🔍 VOICE DEBUG: behavior_config content: {
-  "maxTokens": 1000,
-  "enableEmoji": true,
-  "enableVoice": true,
-  "temperature": 0.7,
-  "enableTypingIndicator": true
-}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:65 🔍 VOICE DEBUG: enableVoice value: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:66 🔍 VOICE DEBUG: enableVoice type: boolean
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:67 🔍 VOICE DEBUG: ===================================================
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:70 🔍 VOICE DEBUG: Final isVoiceEnabled: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:75 🎤 VOICE DEBUG: Voice chat enabled for this chatbot - initializing services
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:87 🔧 VOICE DEBUG: Starting voice services initialization...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:91 🔍 VOICE DEBUG: Checking for Speech Recognition API...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:92 🔍 VOICE DEBUG: webkitSpeechRecognition available: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:93 🔍 VOICE DEBUG: SpeechRecognition available: false
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:102 ✅ VOICE DEBUG: Speech Recognition initialized with settings: {continuous: false, interimResults: false, lang: 'en-US'}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:161 🔊 TTS DEBUG: ==================== TTS SYSTEM DETECTION ====================
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:162 🔊 TTS DEBUG: Checking for Speech Synthesis API...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:163 🔊 TTS DEBUG: speechSynthesis available: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:164 🔊 TTS DEBUG: 🎯 CURRENT TTS SYSTEM: Browser Web Speech API (NOT Deepgram)
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:165 🔊 TTS DEBUG: This uses the browser's built-in text-to-speech engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:169 ✅ TTS DEBUG: Browser Speech Synthesis initialized
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:170 🔊 TTS DEBUG: TTS Provider: Browser Web Speech API
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:171 🔊 TTS DEBUG: TTS Type: Client-side (no API calls to Deepgram)
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:175 🔊 TTS DEBUG: Available browser voices: 0
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:203 🔊 TTS DEBUG: Checking TTS implementation status...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:204 🔊 TTS DEBUG: 📋 TTS SYSTEM STATUS (TEMPORARY):
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:205 🔊 TTS DEBUG: ✅ Browser TTS: IMPLEMENTED and ACTIVE
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:206 🔊 TTS DEBUG: 🔧 Deepgram TTS: IMPLEMENTED but TEMPORARILY DISABLED
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:207 🔊 TTS DEBUG: 🎯 CURRENT STRATEGY: Browser TTS only
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:208 🔊 TTS DEBUG: 💰 COST: Browser $0.00 (free)
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:209 🔊 TTS DEBUG: 🔧 NOTE: Fixing Deepgram API integration (CORS + Auth issues)
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:210 🔊 TTS DEBUG: ===============================================================
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:212 ✅ VOICE DEBUG: Voice services initialization completed
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:57 🔍 VOICE DEBUG: ==================== CHATBOT ANALYSIS ====================
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:58 🔍 VOICE DEBUG: Checking chatbot voice settings...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:59 🔍 VOICE DEBUG: Full chatbot object: {
-  "name": "voice-agent ",
-  "description": "This voice assistant helps customers by naturally engaging in conversations to answer queries, resolve issues, and provide clear, detailed information about our products and services—offering a seamless, human-like support experience.",
-  "system_prompt": "You are a helpful, conversational voice assistant for Walmart. Speak in a clear, friendly, and professional tone. Your role is to assist customers by naturally answering their questions, resolving their concerns, and providing accurate, detailed information about our products and services. Keep responses concise, engaging, and easy to understand in a spoken format. Use simple, conversational language and confirm understanding when needed. If you're unsure or the request is beyond your capabilities, politely offer to connect the customer to a human agent.",
-  "model": "llama-3.1-8b-instant",
-  "appearance_config": {
-    "theme": "light",
-    "botName": "Assistant",
-    "position": "bottom-right",
-    "avatarUrl": "",
-    "showAvatar": true,
-    "primaryColor": "#3b82f6",
-    "welcomeTitle": "Welcome",
-    "greetingMessage": "Hello! How can I help you today?"
-  },
-  "behavior_config": {
-    "maxTokens": 1000,
-    "enableEmoji": true,
-    "enableVoice": true,
-    "temperature": 0.7,
-    "enableTypingIndicator": true
-  },
-  "is_active": true,
-  "id": "5e69ab00-d866-46ab-b20b-fec3338a0895",
-  "user_id": "6ff34613-5262-4073-b0a1-68b36873e3db",
-  "created_at": "2025-08-01T10:56:34.844446Z",
-  "updated_at": "2025-08-04T11:10:21.331998Z"
-}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:60 🔍 VOICE DEBUG: chatbot exists: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:61 🔍 VOICE DEBUG: chatbot.id: 5e69ab00-d866-46ab-b20b-fec3338a0895
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:62 🔍 VOICE DEBUG: behavior_config exists: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:63 🔍 VOICE DEBUG: behavior_config type: object
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:64 🔍 VOICE DEBUG: behavior_config content: {
-  "maxTokens": 1000,
-  "enableEmoji": true,
-  "enableVoice": true,
-  "temperature": 0.7,
-  "enableTypingIndicator": true
-}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:65 🔍 VOICE DEBUG: enableVoice value: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:66 🔍 VOICE DEBUG: enableVoice type: boolean
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:67 🔍 VOICE DEBUG: ===================================================
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:70 🔍 VOICE DEBUG: Final isVoiceEnabled: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:75 🎤 VOICE DEBUG: Voice chat enabled for this chatbot - initializing services
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:87 🔧 VOICE DEBUG: Starting voice services initialization...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:91 🔍 VOICE DEBUG: Checking for Speech Recognition API...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:92 🔍 VOICE DEBUG: webkitSpeechRecognition available: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:93 🔍 VOICE DEBUG: SpeechRecognition available: false
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:102 ✅ VOICE DEBUG: Speech Recognition initialized with settings: {continuous: false, interimResults: false, lang: 'en-US'}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:161 🔊 TTS DEBUG: ==================== TTS SYSTEM DETECTION ====================
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:162 🔊 TTS DEBUG: Checking for Speech Synthesis API...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:163 🔊 TTS DEBUG: speechSynthesis available: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:164 🔊 TTS DEBUG: 🎯 CURRENT TTS SYSTEM: Browser Web Speech API (NOT Deepgram)
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:165 🔊 TTS DEBUG: This uses the browser's built-in text-to-speech engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:169 ✅ TTS DEBUG: Browser Speech Synthesis initialized
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:170 🔊 TTS DEBUG: TTS Provider: Browser Web Speech API
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:171 🔊 TTS DEBUG: TTS Type: Client-side (no API calls to Deepgram)
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:175 🔊 TTS DEBUG: Available browser voices: 0
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:203 🔊 TTS DEBUG: Checking TTS implementation status...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:204 🔊 TTS DEBUG: 📋 TTS SYSTEM STATUS (TEMPORARY):
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:205 🔊 TTS DEBUG: ✅ Browser TTS: IMPLEMENTED and ACTIVE
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:206 🔊 TTS DEBUG: 🔧 Deepgram TTS: IMPLEMENTED but TEMPORARILY DISABLED
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:207 🔊 TTS DEBUG: 🎯 CURRENT STRATEGY: Browser TTS only
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:208 🔊 TTS DEBUG: 💰 COST: Browser $0.00 (free)
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:209 🔊 TTS DEBUG: 🔧 NOTE: Fixing Deepgram API integration (CORS + Auth issues)
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:210 🔊 TTS DEBUG: ===============================================================
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:212 ✅ VOICE DEBUG: Voice services initialization completed
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:180 🔊 TTS DEBUG: Available browser voices (delayed): 22
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:181 🔊 TTS DEBUG: 📋 Voice List (Browser TTS):
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:183   1. Microsoft George - English (United Kingdom) (en-GB) - Local - Browser Engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:183   2. Microsoft Hazel - English (United Kingdom) (en-GB) - Local - Browser Engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:183   3. Microsoft Susan - English (United Kingdom) (en-GB) - Local - Browser Engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:183   4. Google Deutsch (de-DE) - Remote - Browser Engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:183   5. Google US English (en-US) - Remote - Browser Engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:180 🔊 TTS DEBUG: Available browser voices (delayed): 22
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:181 🔊 TTS DEBUG: 📋 Voice List (Browser TTS):
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:183   1. Microsoft George - English (United Kingdom) (en-GB) - Local - Browser Engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:183   2. Microsoft Hazel - English (United Kingdom) (en-GB) - Local - Browser Engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:183   3. Microsoft Susan - English (United Kingdom) (en-GB) - Local - Browser Engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:183   4. Google Deutsch (de-DE) - Remote - Browser Engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:183   5. Google US English (en-US) - Remote - Browser Engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:67 📚 RAG DEBUG: Loading documents for chatbot: 5e69ab00-d866-46ab-b20b-fec3338a0895
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:67 📚 RAG DEBUG: Loading documents for chatbot: 5e69ab00-d866-46ab-b20b-fec3338a0895
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:71 ✅ RAG DEBUG: Documents loaded successfully: {count: 1, documents: Array(1)}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:71 ✅ RAG DEBUG: Documents loaded successfully: {count: 1, documents: Array(1)}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:67 📚 RAG DEBUG: Loading documents for chatbot: 5e69ab00-d866-46ab-b20b-fec3338a0895
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:71 ✅ RAG DEBUG: Documents loaded successfully: {count: 0, documents: Array(0)}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:169 🚀 RAG DEBUG: Starting file upload process {fileCount: 1, chatbotId: '5e69ab00-d866-46ab-b20b-fec3338a0895', files: Array(1)}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:180 📁 RAG DEBUG: Processing file 1/1: Customer_Support_Policy_Manual.pdf
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:189 ⬆️ RAG DEBUG: Uploading Customer_Support_Policy_Manual.pdf to backend...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:196 ✅ RAG DEBUG: Upload successful for Customer_Support_Policy_Manual.pdf {id: '3a6bb86f-6b5e-4e4f-82c2-86d60b0c819b', filename: 'Customer_Support_Policy_Manual.pdf', file_type: 'pdf', file_size: 2270, processed: true, …}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:204 🔄 RAG DEBUG: Reloading documents list after successful upload...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:67 📚 RAG DEBUG: Loading documents for chatbot: 5e69ab00-d866-46ab-b20b-fec3338a0895
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:71 ✅ RAG DEBUG: Documents loaded successfully: {count: 1, documents: Array(1)}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:207 ✅ RAG DEBUG: Documents list reloaded
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:223 🎉 RAG DEBUG: File upload process completed
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:96 💾 VOICE DEBUG: ==================== SAVING SETTINGS ====================
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:97 💾 VOICE DEBUG: Saving chatbot settings...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:98 💾 VOICE DEBUG: Current settings state: {
-  "name": "voice-agent ",
-  "description": "This voice assistant helps customers by naturally engaging in conversations to answer queries, resolve issues, and provide clear, detailed information about our products and services—offering a seamless, human-like support experience.",
-  "system_prompt": "You are a helpful, conversational voice assistant for Walmart. Speak in a clear, friendly, and professional tone. Your role is to assist customers by naturally answering their questions, resolving their concerns, and providing accurate, detailed information about our products and services. Keep responses concise, engaging, and easy to understand in a spoken format. Use simple, conversational language and confirm understanding when needed. If you're unsure or the request is beyond your capabilities, politely offer to connect the customer to a human agent.",
-  "model": "llama-3.1-8b-instant",
-  "is_active": true,
-  "appearance_config": {
-    "theme": "light",
-    "primaryColor": "#3b82f6",
-    "position": "bottom-right",
-    "greetingMessage": "Hello! How can I help you today?",
-    "botName": "Assistant",
-    "showAvatar": true,
-    "avatarUrl": "",
-    "welcomeTitle": "Welcome"
-  },
-  "behavior_config": {
-    "enableVoice": true,
-    "enableTypingIndicator": true,
-    "enableEmoji": true,
-    "maxTokens": 1000,
-    "temperature": 0.7
-  }
-}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:99 💾 VOICE DEBUG: Voice settings specifically: {enableVoice: true, behaviorConfigExists: true, fullBehaviorConfig: {…}}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:116 💾 VOICE DEBUG: Update data being sent to backend: {
-  "name": "voice-agent ",
-  "description": "This voice assistant helps customers by naturally engaging in conversations to answer queries, resolve issues, and provide clear, detailed information about our products and services—offering a seamless, human-like support experience.",
-  "system_prompt": "You are a helpful, conversational voice assistant for Walmart. Speak in a clear, friendly, and professional tone. Your role is to assist customers by naturally answering their questions, resolving their concerns, and providing accurate, detailed information about our products and services. Keep responses concise, engaging, and easy to understand in a spoken format. Use simple, conversational language and confirm understanding when needed. If you're unsure or the request is beyond your capabilities, politely offer to connect the customer to a human agent.",
-  "model": "llama-3.1-8b-instant",
-  "is_active": true,
-  "appearance_config": {
-    "theme": "light",
-    "primaryColor": "#3b82f6",
-    "position": "bottom-right",
-    "greetingMessage": "Hello! How can I help you today?",
-    "botName": "Assistant",
-    "showAvatar": true,
-    "avatarUrl": "",
-    "welcomeTitle": "Welcome"
-  },
-  "behavior_config": {
-    "enableVoice": true,
-    "enableTypingIndicator": true,
-    "enableEmoji": true,
-    "maxTokens": 1000,
-    "temperature": 0.7
-  }
-}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:117 💾 VOICE DEBUG: behavior_config in update data: {enableVoice: true, enableTypingIndicator: true, enableEmoji: true, maxTokens: 1000, temperature: 0.7}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:118 💾 VOICE DEBUG: enableVoice in update data: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:120 📡 VOICE DEBUG: Sending update request to backend...
-D:\chat_service\frontend\saas-chatbot\lib\api.ts:83 👤 Current user email: akhilpalla@webuildtrades.co
-D:\chat_service\frontend\saas-chatbot\lib\api.ts:114 🚀 API Request (Supabase-native): {url: 'http://localhost:8000/api/v1/chatbots/5e69ab00-d86…338a0895?user_email=akhilpalla%40webuildtrades.co', method: 'PUT', userEmail: 'akhilpalla@webuildtrades.co', body: {…}}
-D:\chat_service\frontend\saas-chatbot\lib\api.ts:123 📡 Attempt 1/4 - Fetching: http://localhost:8000/api/v1/chatbots/5e69ab00-d866-46ab-b20b-fec3338a0895?user_email=akhilpalla%40webuildtrades.co
-D:\chat_service\frontend\saas-chatbot\lib\api.ts:126 ✅ Response received: {status: 200, statusText: 'OK', headers: {…}}
-D:\chat_service\frontend\saas-chatbot\lib\api.ts:154 📦 Response data: {name: 'voice-agent ', description: 'This voice assistant helps customers by naturally …fering a seamless, human-like support experience.', system_prompt: 'You are a helpful, conversational voice assistant …y offer to connect the customer to a human agent.', model: 'llama-3.1-8b-instant', appearance_config: {…}, …}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:122 ✅ VOICE DEBUG: Settings saved successfully
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-settings.tsx:123 ✅ VOICE DEBUG: Backend response: {name: 'voice-agent ', description: 'This voice assistant helps customers by naturally …fering a seamless, human-like support experience.', system_prompt: 'You are a helpful, conversational voice assistant …y offer to connect the customer to a human agent.', model: 'llama-3.1-8b-instant', appearance_config: {…}, …}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:57 🔍 VOICE DEBUG: ==================== CHATBOT ANALYSIS ====================
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:58 🔍 VOICE DEBUG: Checking chatbot voice settings...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:59 🔍 VOICE DEBUG: Full chatbot object: {
-  "name": "voice-agent ",
-  "description": "This voice assistant helps customers by naturally engaging in conversations to answer queries, resolve issues, and provide clear, detailed information about our products and services—offering a seamless, human-like support experience.",
-  "system_prompt": "You are a helpful, conversational voice assistant for Walmart. Speak in a clear, friendly, and professional tone. Your role is to assist customers by naturally answering their questions, resolving their concerns, and providing accurate, detailed information about our products and services. Keep responses concise, engaging, and easy to understand in a spoken format. Use simple, conversational language and confirm understanding when needed. If you're unsure or the request is beyond your capabilities, politely offer to connect the customer to a human agent.",
-  "model": "llama-3.1-8b-instant",
-  "appearance_config": {
-    "theme": "light",
-    "botName": "Assistant",
-    "position": "bottom-right",
-    "avatarUrl": "",
-    "showAvatar": true,
-    "primaryColor": "#3b82f6",
-    "welcomeTitle": "Welcome",
-    "greetingMessage": "Hello! How can I help you today?"
-  },
-  "behavior_config": {
-    "maxTokens": 1000,
-    "enableEmoji": true,
-    "enableVoice": true,
-    "temperature": 0.7,
-    "enableTypingIndicator": true
-  },
-  "is_active": true,
-  "id": "5e69ab00-d866-46ab-b20b-fec3338a0895",
-  "user_id": "6ff34613-5262-4073-b0a1-68b36873e3db",
-  "created_at": "2025-08-01T10:56:34.844446Z",
-  "updated_at": "2025-08-04T11:10:21.331998Z"
-}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:60 🔍 VOICE DEBUG: chatbot exists: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:61 🔍 VOICE DEBUG: chatbot.id: 5e69ab00-d866-46ab-b20b-fec3338a0895
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:62 🔍 VOICE DEBUG: behavior_config exists: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:63 🔍 VOICE DEBUG: behavior_config type: object
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:64 🔍 VOICE DEBUG: behavior_config content: {
-  "maxTokens": 1000,
-  "enableEmoji": true,
-  "enableVoice": true,
-  "temperature": 0.7,
-  "enableTypingIndicator": true
-}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:65 🔍 VOICE DEBUG: enableVoice value: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:66 🔍 VOICE DEBUG: enableVoice type: boolean
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:67 🔍 VOICE DEBUG: ===================================================
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:70 🔍 VOICE DEBUG: Final isVoiceEnabled: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:75 🎤 VOICE DEBUG: Voice chat enabled for this chatbot - initializing services
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:87 🔧 VOICE DEBUG: Starting voice services initialization...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:91 🔍 VOICE DEBUG: Checking for Speech Recognition API...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:92 🔍 VOICE DEBUG: webkitSpeechRecognition available: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:93 🔍 VOICE DEBUG: SpeechRecognition available: false
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:102 ✅ VOICE DEBUG: Speech Recognition initialized with settings: {continuous: false, interimResults: false, lang: 'en-US'}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:161 🔊 TTS DEBUG: ==================== TTS SYSTEM DETECTION ====================
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:162 🔊 TTS DEBUG: Checking for Speech Synthesis API...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:163 🔊 TTS DEBUG: speechSynthesis available: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:164 🔊 TTS DEBUG: 🎯 CURRENT TTS SYSTEM: Browser Web Speech API (NOT Deepgram)
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:165 🔊 TTS DEBUG: This uses the browser's built-in text-to-speech engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:169 ✅ TTS DEBUG: Browser Speech Synthesis initialized
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:170 🔊 TTS DEBUG: TTS Provider: Browser Web Speech API
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:171 🔊 TTS DEBUG: TTS Type: Client-side (no API calls to Deepgram)
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:175 🔊 TTS DEBUG: Available browser voices: 22
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:187 🔊 TTS DEBUG: 📋 Voice List (Browser TTS):
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:189   1. Microsoft George - English (United Kingdom) (en-GB) - Local - Browser Engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:189   2. Microsoft Hazel - English (United Kingdom) (en-GB) - Local - Browser Engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:189   3. Microsoft Susan - English (United Kingdom) (en-GB) - Local - Browser Engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:189   4. Google Deutsch (de-DE) - Remote - Browser Engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:189   5. Google US English (en-US) - Remote - Browser Engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:203 🔊 TTS DEBUG: Checking TTS implementation status...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:204 🔊 TTS DEBUG: 📋 TTS SYSTEM STATUS (TEMPORARY):
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:205 🔊 TTS DEBUG: ✅ Browser TTS: IMPLEMENTED and ACTIVE
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:206 🔊 TTS DEBUG: 🔧 Deepgram TTS: IMPLEMENTED but TEMPORARILY DISABLED
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:207 🔊 TTS DEBUG: 🎯 CURRENT STRATEGY: Browser TTS only
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:208 🔊 TTS DEBUG: 💰 COST: Browser $0.00 (free)
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:209 🔊 TTS DEBUG: 🔧 NOTE: Fixing Deepgram API integration (CORS + Auth issues)
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:210 🔊 TTS DEBUG: ===============================================================
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:212 ✅ VOICE DEBUG: Voice services initialization completed
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:57 🔍 VOICE DEBUG: ==================== CHATBOT ANALYSIS ====================
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:58 🔍 VOICE DEBUG: Checking chatbot voice settings...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:59 🔍 VOICE DEBUG: Full chatbot object: {
-  "name": "voice-agent ",
-  "description": "This voice assistant helps customers by naturally engaging in conversations to answer queries, resolve issues, and provide clear, detailed information about our products and services—offering a seamless, human-like support experience.",
-  "system_prompt": "You are a helpful, conversational voice assistant for Walmart. Speak in a clear, friendly, and professional tone. Your role is to assist customers by naturally answering their questions, resolving their concerns, and providing accurate, detailed information about our products and services. Keep responses concise, engaging, and easy to understand in a spoken format. Use simple, conversational language and confirm understanding when needed. If you're unsure or the request is beyond your capabilities, politely offer to connect the customer to a human agent.",
-  "model": "llama-3.1-8b-instant",
-  "appearance_config": {
-    "theme": "light",
-    "botName": "Assistant",
-    "position": "bottom-right",
-    "avatarUrl": "",
-    "showAvatar": true,
-    "primaryColor": "#3b82f6",
-    "welcomeTitle": "Welcome",
-    "greetingMessage": "Hello! How can I help you today?"
-  },
-  "behavior_config": {
-    "maxTokens": 1000,
-    "enableEmoji": true,
-    "enableVoice": true,
-    "temperature": 0.7,
-    "enableTypingIndicator": true
-  },
-  "is_active": true,
-  "id": "5e69ab00-d866-46ab-b20b-fec3338a0895",
-  "user_id": "6ff34613-5262-4073-b0a1-68b36873e3db",
-  "created_at": "2025-08-01T10:56:34.844446Z",
-  "updated_at": "2025-08-04T11:10:21.331998Z"
-}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:60 🔍 VOICE DEBUG: chatbot exists: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:61 🔍 VOICE DEBUG: chatbot.id: 5e69ab00-d866-46ab-b20b-fec3338a0895
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:62 🔍 VOICE DEBUG: behavior_config exists: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:63 🔍 VOICE DEBUG: behavior_config type: object
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:64 🔍 VOICE DEBUG: behavior_config content: {
-  "maxTokens": 1000,
-  "enableEmoji": true,
-  "enableVoice": true,
-  "temperature": 0.7,
-  "enableTypingIndicator": true
-}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:65 🔍 VOICE DEBUG: enableVoice value: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:66 🔍 VOICE DEBUG: enableVoice type: boolean
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:67 🔍 VOICE DEBUG: ===================================================
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:70 🔍 VOICE DEBUG: Final isVoiceEnabled: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:75 🎤 VOICE DEBUG: Voice chat enabled for this chatbot - initializing services
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:87 🔧 VOICE DEBUG: Starting voice services initialization...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:91 🔍 VOICE DEBUG: Checking for Speech Recognition API...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:92 🔍 VOICE DEBUG: webkitSpeechRecognition available: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:93 🔍 VOICE DEBUG: SpeechRecognition available: false
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:102 ✅ VOICE DEBUG: Speech Recognition initialized with settings: {continuous: false, interimResults: false, lang: 'en-US'}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:161 🔊 TTS DEBUG: ==================== TTS SYSTEM DETECTION ====================
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:162 🔊 TTS DEBUG: Checking for Speech Synthesis API...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:163 🔊 TTS DEBUG: speechSynthesis available: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:164 🔊 TTS DEBUG: 🎯 CURRENT TTS SYSTEM: Browser Web Speech API (NOT Deepgram)
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:165 🔊 TTS DEBUG: This uses the browser's built-in text-to-speech engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:169 ✅ TTS DEBUG: Browser Speech Synthesis initialized
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:170 🔊 TTS DEBUG: TTS Provider: Browser Web Speech API
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:171 🔊 TTS DEBUG: TTS Type: Client-side (no API calls to Deepgram)
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:175 🔊 TTS DEBUG: Available browser voices: 22
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:187 🔊 TTS DEBUG: 📋 Voice List (Browser TTS):
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:189   1. Microsoft George - English (United Kingdom) (en-GB) - Local - Browser Engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:189   2. Microsoft Hazel - English (United Kingdom) (en-GB) - Local - Browser Engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:189   3. Microsoft Susan - English (United Kingdom) (en-GB) - Local - Browser Engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:189   4. Google Deutsch (de-DE) - Remote - Browser Engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:189   5. Google US English (en-US) - Remote - Browser Engine
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:203 🔊 TTS DEBUG: Checking TTS implementation status...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:204 🔊 TTS DEBUG: 📋 TTS SYSTEM STATUS (TEMPORARY):
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:205 🔊 TTS DEBUG: ✅ Browser TTS: IMPLEMENTED and ACTIVE
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:206 🔊 TTS DEBUG: 🔧 Deepgram TTS: IMPLEMENTED but TEMPORARILY DISABLED
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:207 🔊 TTS DEBUG: 🎯 CURRENT STRATEGY: Browser TTS only
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:208 🔊 TTS DEBUG: 💰 COST: Browser $0.00 (free)
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:209 🔊 TTS DEBUG: 🔧 NOTE: Fixing Deepgram API integration (CORS + Auth issues)
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:210 🔊 TTS DEBUG: ===============================================================
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:212 ✅ VOICE DEBUG: Voice services initialization completed
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:686 🧪 Sending test chat message to chatbot: 5e69ab00-d866-46ab-b20b-fec3338a0895
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:695 📡 RAG DEBUG: Calling testChatbot API with message: What are your customer support business hours?
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:696 💬 RAG DEBUG: Conversation history length: 1
-D:\chat_service\frontend\saas-chatbot\lib\api.ts:83 👤 Current user email: akhilpalla@webuildtrades.co
-D:\chat_service\frontend\saas-chatbot\lib\api.ts:114 🚀 API Request (Supabase-native): {url: 'http://localhost:8000/api/v1/chatbots/5e69ab00-d86…est-chat?user_email=akhilpalla%40webuildtrades.co', method: 'POST', userEmail: 'akhilpalla@webuildtrades.co', body: {…}}
-D:\chat_service\frontend\saas-chatbot\lib\api.ts:123 📡 Attempt 1/4 - Fetching: http://localhost:8000/api/v1/chatbots/5e69ab00-d866-46ab-b20b-fec3338a0895/test-chat?user_email=akhilpalla%40webuildtrades.co
-D:\chat_service\frontend\saas-chatbot\lib\api.ts:126 ✅ Response received: {status: 200, statusText: 'OK', headers: {…}}
-D:\chat_service\frontend\saas-chatbot\lib\api.ts:154 📦 Response data: {response: 'Our customer support team is available to help you…LMART (1-800-925-6278), online chat, or in-store.', conversation_id: 'test'}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:703 🎯 RAG DEBUG: Got chatbot response: {hasResponse: true, responseLength: 224, ragEnabled: undefined, contextCount: 0, model: undefined, …}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:727 🔊 TEXT DEBUG: Text message response completed: {voiceEnabled: true, shouldUseVoice: true, responseLength: 224, behaviorConfig: {…}}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:735 🔊 TEXT DEBUG: ✅ FORCING speech synthesis for text message (bypassing state issue)
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:736 🔊 TEXT DEBUG: Text message response to speak: Our customer support team is available to help you Monday through Sunday, 6am to 12am Central Time. ...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:737 🔊 TEXT DEBUG: 🎯 Using HYBRID TTS: Deepgram (Primary) → Browser (Fallback)
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:474 🔊 TTS DEBUG: ==================== HYBRID TTS SYSTEM ====================
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:475 🔊 TTS DEBUG: speakResponse called with text: Our customer support team is available to help you Monday through Sunday, 6am to 12am Central Time. ...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:476 🔊 TTS DEBUG: voiceEnabled: true
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:477 🔊 TTS DEBUG: text length: 224
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:478 🔊 TTS DEBUG: 🎯 Using HYBRID TTS: Deepgram (Primary) → Browser (Fallback)
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:487 🔊 TTS DEBUG: 🎯 TRYING: Deepgram TTS (Primary)
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:356 🔊 DEEPGRAM TTS: ==================== DEEPGRAM TTS SYSTEM ====================
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:357 🔊 DEEPGRAM TTS: Starting TTS request for text: Our customer support team is available to help you Monday through Sunday, 6am to 12am Central Time. ...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:358 🔊 DEEPGRAM TTS: Text length: 224
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:364 🔊 DEEPGRAM TTS: Calling frontend TTS API route...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:373 🔊 DEEPGRAM TTS: Got user email: akhilpalla@webuildtrades.co
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:400 🔊 DEEPGRAM TTS: Frontend API response status: 200
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:414 🔊 DEEPGRAM TTS: Received audio buffer: {size: 120059, type: 'ArrayBuffer'}
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:427 🔊 DEEPGRAM TTS: Created audio URL: blob:http://localhost:3000/5c27824e-14f2-4446-aea5-bc92bb33ae38
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:459 🔊 DEEPGRAM TTS: Starting audio playback...
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:442 🔊 DEEPGRAM TTS: Audio playback started
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:434 🔊 DEEPGRAM TTS: Audio loading started
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:438 🔊 DEEPGRAM TTS: Audio can start playing
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:462 🔊 DEEPGRAM TTS: ✅ SUCCESS: Deepgram TTS completed successfully
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:470 🔊 DEEPGRAM TTS: ================================================================
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:489 🔊 TTS DEBUG: ✅ SUCCESS: Deepgram TTS completed successfully
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:515 🔊 TTS DEBUG: ================================================================
-D:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx:741 🔊 TEXT DEBUG: ✅ Hybrid TTS completed for text message
+Error: ./components/dashboard/chatbot-test.tsx
+Error:   [31m×[0m Merge conflict marker encountered.
+     ╭─[[36;1;4mD:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx[0m:728:1]
+ [2m725[0m │         responseLength: response?.response?.length || 0,
+ [2m726[0m │         ragEnabled: response?.rag_enabled,
+ [2m727[0m │         contextCount: response?.context_count || 0,
+ [2m728[0m │ <<<<<<< Updated upstream
+     · [35;1m───────[0m
+ [2m729[0m │ <<<<<<< Updated upstream
+ [2m730[0m │         model: response?.model,
+ [2m731[0m │         responsePreview: response?.response?.substring(0, 100) + '...',
+     ╰────
+  [31m×[0m Merge conflict marker encountered.
+     ╭─[[36;1;4mD:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx[0m:729:1]
+ [2m726[0m │         ragEnabled: response?.rag_enabled,
+ [2m727[0m │         contextCount: response?.context_count || 0,
+ [2m728[0m │ <<<<<<< Updated upstream
+ [2m729[0m │ <<<<<<< Updated upstream
+     · [35;1m───────[0m
+ [2m730[0m │         model: response?.model,
+ [2m731[0m │         responsePreview: response?.response?.substring(0, 100) + '...',
+ [2m732[0m │ =======
+     ╰────
+  [31m×[0m Merge conflict marker encountered.
+     ╭─[[36;1;4mD:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx[0m:732:1]
+ [2m729[0m │ <<<<<<< Updated upstream
+ [2m730[0m │         model: response?.model,
+ [2m731[0m │         responsePreview: response?.response?.substring(0, 100) + '...',
+ [2m732[0m │ =======
+     · [35;1m───────[0m
+ [2m733[0m │         model: response?.model_used,
+ [2m734[0m │ >>>>>>> Stashed changes
+ [2m735[0m │ =======
+     ╰────
+  [31m×[0m Merge conflict marker encountered.
+     ╭─[[36;1;4mD:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx[0m:734:1]
+ [2m731[0m │         responsePreview: response?.response?.substring(0, 100) + '...',
+ [2m732[0m │ =======
+ [2m733[0m │         model: response?.model_used,
+ [2m734[0m │ >>>>>>> Stashed changes
+     · [35;1m───────[0m
+ [2m735[0m │ =======
+ [2m736[0m │         model: response?.model_used,
+ [2m737[0m │ >>>>>>> Stashed changes
+     ╰────
+  [31m×[0m Merge conflict marker encountered.
+     ╭─[[36;1;4mD:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx[0m:735:1]
+ [2m732[0m │ =======
+ [2m733[0m │         model: response?.model_used,
+ [2m734[0m │ >>>>>>> Stashed changes
+ [2m735[0m │ =======
+     · [35;1m───────[0m
+ [2m736[0m │         model: response?.model_used,
+ [2m737[0m │ >>>>>>> Stashed changes
+ [2m738[0m │         fullResponse: response
+     ╰────
+  [31m×[0m Merge conflict marker encountered.
+     ╭─[[36;1;4mD:\chat_service\frontend\saas-chatbot\components\dashboard\chatbot-test.tsx[0m:737:1]
+ [2m734[0m │ >>>>>>> Stashed changes
+ [2m735[0m │ =======
+ [2m736[0m │         model: response?.model_used,
+ [2m737[0m │ >>>>>>> Stashed changes
+     · [35;1m───────[0m
+ [2m738[0m │         fullResponse: response
+ [2m739[0m │       });
+ [2m740[0m │       console.log('🔍 RAG FLOW DEBUG: RAG Analysis:');
+     ╰────
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/dashboard/chatbot-test.tsx
+./components/dashboard/chatbot-tabs.tsx
+./app/dashboard/chatbots/[id]/page.tsx
+    at tr (webpack-internal:///(pages-dir-browser)/./node_modules/next/dist/compiled/next-devtools/index.js:552:164429)
+    at o6 (webpack-internal:///(pages-dir-browser)/./node_modules/next/dist/compiled/next-devtools/index.js:541:62116)
+    at iP (webpack-internal:///(pages-dir-browser)/./node_modules/next/dist/compiled/next-devtools/index.js:541:81700)
+    at i$ (webpack-internal:///(pages-dir-browser)/./node_modules/next/dist/compiled/next-devtools/index.js:541:92800)
+    at sv (webpack-internal:///(pages-dir-browser)/./node_modules/next/dist/compiled/next-devtools/index.js:541:125399)
+    at eval (webpack-internal:///(pages-dir-browser)/./node_modules/next/dist/compiled/next-devtools/index.js:541:125244)
+    at sm (webpack-internal:///(pages-dir-browser)/./node_modules/next/dist/compiled/next-devtools/index.js:541:125252)
+    at sa (webpack-internal:///(pages-dir-browser)/./node_modules/next/dist/compiled/next-devtools/index.js:541:121554)
+    at sZ (webpack-internal:///(pages-dir-browser)/./node_modules/next/dist/compiled/next-devtools/index.js:541:143648)
+    at MessagePort._ (webpack-internal:///(pages-dir-browser)/./node_modules/next/dist/compiled/next-devtools/index.js:541:196942)
