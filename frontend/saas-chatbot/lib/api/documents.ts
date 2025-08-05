@@ -86,6 +86,16 @@ class DocumentService {
     return this.fetchWithAuth(`/api/v1/documents/${id}`);
   }
 
+  async getDocumentStatus(documentId: string): Promise<any> {
+    return this.fetchWithAuth(`/api/v1/documents/${documentId}/status`);
+  }
+
+  async retryDocument(documentId: string): Promise<{success: boolean}> {
+    return this.fetchWithAuth(`/api/v1/documents/${documentId}/retry`, {
+      method: 'POST',
+    });
+  }
+
   async uploadDocument(request: UploadDocumentRequest): Promise<Document> {
     const userEmail = await this.getCurrentUserEmail();
     

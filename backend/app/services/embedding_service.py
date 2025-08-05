@@ -1,6 +1,6 @@
 """
-Embedding Service with Hugging Face Models
-Handles text embeddings generation using local/remote HF models
+Enhanced Embedding Service with Multiple Provider Support
+Handles text embeddings generation using HuggingFace models and external APIs
 """
 
 import logging
@@ -10,6 +10,8 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 import torch
 from huggingface_hub import login
+import httpx
+import asyncio
 
 from app.core.config import settings
 from app.core.database import get_supabase
@@ -18,28 +20,44 @@ logger = logging.getLogger(__name__)
 
 
 class EmbeddingService:
-    """Service for handling text embeddings using Hugging Face models"""
+    """Enhanced service for handling text embeddings with multiple providers"""
     
     # Available embedding models (ordered by preference)
     AVAILABLE_MODELS = {
         "all-MiniLM-L6-v2": {
             "dimension": 384,
             "max_seq_length": 256,
-            "description": "Fast, lightweight model good for most tasks"
+            "description": "Fast, lightweight model good for most tasks",
+            "provider": "huggingface"
         },
         "all-mpnet-base-v2": {
             "dimension": 768,
             "max_seq_length": 384,
-            "description": "High quality model with good performance"
+            "description": "High quality model with good performance",
+            "provider": "huggingface"
         },
         "sentence-transformers/all-MiniLM-L12-v2": {
             "dimension": 384,
             "max_seq_length": 256,
-            "description": "Slightly larger than L6, better quality"
+            "description": "Slightly larger than L6, better quality",
+            "provider": "huggingface"
+        },
+        "BAAI/bge-small-en-v1.5": {
+            "dimension": 384,
+            "max_seq_length": 512,
+            "description": "State-of-the-art BGE model, excellent for RAG",
+            "provider": "huggingface"
+        },
+        "BAAI/bge-base-en-v1.5": {
+            "dimension": 768,
+            "max_seq_length": 512,
+            "description": "Larger BGE model, best quality for RAG applications",
+            "provider": "huggingface"
         }
     }
     
-    DEFAULT_MODEL = "all-MiniLM-L6-v2"
+    DEFAULT_MODEL = "BAAI/bge-small-en-v1.5"  # Better for RAG applications
+    FALLBACK_MODEL = "all-MiniLM-L6-v2"  # Fast fallback model
     
     def __init__(self):
         self.supabase = get_supabase()
@@ -55,8 +73,8 @@ class EmbeddingService:
             except Exception as e:
                 logger.warning(f"Failed to login to Hugging Face: {e}")
         
-        # Initialize default model
-        self._load_model(self.DEFAULT_MODEL)
+        # Initialize best available model with fallback
+        self._initialize_best_model()
     
     def _load_model(self, model_name: str) -> bool:
         """
@@ -107,6 +125,38 @@ class EmbeddingService:
             self.current_model_name = "dummy"
             self.embedding_dimension = 384
             return False
+    
+    def _initialize_best_model(self) -> None:
+        """Initialize the best available embedding model with fallback"""
+        try:
+            # Try to load the best RAG model first
+            if self._load_model(self.DEFAULT_MODEL):
+                logger.info(f"Successfully loaded best RAG model: {self.DEFAULT_MODEL}")
+                return
+        except Exception as e:
+            logger.warning(f"Failed to load best model {self.DEFAULT_MODEL}: {e}")
+        
+        # Fallback to the original reliable model
+        try:
+            if self._load_model(self.FALLBACK_MODEL):
+                logger.info(f"Successfully loaded fallback model: {self.FALLBACK_MODEL}")
+                return
+        except Exception as e:
+            logger.error(f"Failed to load fallback model {self.FALLBACK_MODEL}: {e}")
+        
+        # Last resort - dummy embeddings
+        logger.warning("All model loading failed - using dummy embeddings")
+    
+    def get_model_recommendation(self, use_case: str = "rag") -> str:
+        """Get the recommended model for a specific use case"""
+        if use_case.lower() == "rag":
+            return "BAAI/bge-small-en-v1.5"  # Best for RAG with 384D
+        elif use_case.lower() == "speed":
+            return "all-MiniLM-L6-v2"  # Fastest model
+        elif use_case.lower() == "quality":
+            return "BAAI/bge-base-en-v1.5"  # Best quality but 768D
+        else:
+            return self.DEFAULT_MODEL
     
     async def generate_embedding(self, text: str, model_name: Optional[str] = None) -> List[float]:
         """
@@ -308,6 +358,215 @@ class EmbeddingService:
             # Fallback to basic query
             return await self._fallback_similarity_search(query_embedding, chatbot_id, limit)
     
+    async def hybrid_search(
+        self,
+        query_text: str,
+        chatbot_id: str,
+        limit: int = 5,
+        similarity_threshold: float = 0.7,
+        bm25_weight: float = 0.3,
+        vector_weight: float = 0.7
+    ) -> List[Dict[str, Any]]:
+        """
+        Perform hybrid search combining BM25 keyword search with vector similarity
+        
+        Args:
+            query_text: Original query text
+            chatbot_id: ID of chatbot to search documents for
+            limit: Maximum number of results
+            similarity_threshold: Minimum similarity score for vector search
+            bm25_weight: Weight for BM25 scores (0-1)
+            vector_weight: Weight for vector similarity scores (0-1)
+            
+        Returns:
+            List of document chunks ranked by hybrid score
+        """
+        try:
+            # Generate embedding for vector search
+            query_embedding = await self.generate_embedding(query_text)
+            
+            # Run both searches in parallel
+            import asyncio
+            vector_results, keyword_results = await asyncio.gather(
+                self._vector_search(query_embedding, chatbot_id, limit * 2, similarity_threshold),
+                self._keyword_search(query_text, chatbot_id, limit * 2),
+                return_exceptions=True
+            )
+            
+            # Handle exceptions
+            if isinstance(vector_results, Exception):
+                logger.error(f"Vector search failed: {vector_results}")
+                vector_results = []
+            if isinstance(keyword_results, Exception):
+                logger.error(f"Keyword search failed: {keyword_results}")
+                keyword_results = []
+            
+            # Combine and rank results
+            hybrid_results = self._combine_search_results(
+                vector_results, keyword_results, bm25_weight, vector_weight
+            )
+            
+            # Return top results
+            return hybrid_results[:limit]
+            
+        except Exception as e:
+            logger.error(f"Hybrid search failed: {str(e)}")
+            # Fallback to vector search only
+            query_embedding = await self.generate_embedding(query_text)
+            return await self.similarity_search(query_embedding, chatbot_id, limit, similarity_threshold)
+    
+    async def _vector_search(
+        self,
+        query_embedding: List[float],
+        chatbot_id: str,
+        limit: int,
+        similarity_threshold: float
+    ) -> List[Dict[str, Any]]:
+        """Perform vector similarity search"""
+        return await self.similarity_search(query_embedding, chatbot_id, limit, similarity_threshold)
+    
+    async def _keyword_search(
+        self,
+        query_text: str,
+        chatbot_id: str,
+        limit: int
+    ) -> List[Dict[str, Any]]:
+        """Perform keyword search using PostgreSQL full-text search"""
+        try:
+            # Use PostgreSQL's full-text search capabilities
+            search_sql = """
+            SELECT 
+                ve.id,
+                ve.document_id,
+                ve.text_content as content,
+                ve.metadata,
+                ts_rank_cd(to_tsvector('english', ve.text_content), plainto_tsquery('english', %s)) as rank
+            FROM vector_embeddings ve
+            JOIN documents d ON ve.document_id = d.id
+            WHERE d.chatbot_id = %s
+            AND to_tsvector('english', ve.text_content) @@ plainto_tsquery('english', %s)
+            ORDER BY ts_rank_cd(to_tsvector('english', ve.text_content), plainto_tsquery('english', %s)) DESC
+            LIMIT %s;
+            """
+            
+            # Execute the query using Supabase's raw SQL capability
+            response = self.supabase.rpc(
+                "execute_sql",
+                {
+                    "sql_query": search_sql,
+                    "params": [query_text, chatbot_id, query_text, query_text, limit]
+                }
+            ).execute()
+            
+            results = response.data if response.data else []
+            logger.info(f"Keyword search found {len(results)} results")
+            return results
+            
+        except Exception as e:
+            logger.warning(f"Keyword search failed, using fallback: {str(e)}")
+            # Fallback to simple ILIKE search
+            return await self._simple_keyword_search(query_text, chatbot_id, limit)
+    
+    async def _simple_keyword_search(
+        self,
+        query_text: str,
+        chatbot_id: str,
+        limit: int
+    ) -> List[Dict[str, Any]]:
+        """Simple keyword search using ILIKE as fallback"""
+        try:
+            # Split query into keywords
+            keywords = query_text.lower().split()
+            
+            # Build query for documents containing keywords
+            query = self.supabase.table("vector_embeddings") \
+                .select("id, document_id, text_content, metadata") \
+                .eq("documents.chatbot_id", chatbot_id)
+            
+            # Add keyword filters
+            for keyword in keywords:
+                query = query.ilike("text_content", f"%{keyword}%")
+            
+            response = query.limit(limit).execute()
+            results = response.data if response.data else []
+            
+            # Add simple keyword match score
+            for result in results:
+                content = result.get('text_content', '').lower()
+                score = sum(1 for keyword in keywords if keyword in content) / len(keywords)
+                result['rank'] = score
+            
+            return results
+            
+        except Exception as e:
+            logger.error(f"Simple keyword search failed: {str(e)}")
+            return []
+    
+    def _combine_search_results(
+        self,
+        vector_results: List[Dict[str, Any]],
+        keyword_results: List[Dict[str, Any]],
+        bm25_weight: float,
+        vector_weight: float
+    ) -> List[Dict[str, Any]]:
+        """Combine and rank results from vector and keyword searches"""
+        
+        # Normalize scores and create combined results
+        combined_results = {}
+        
+        # Process vector results
+        valid_vector_scores = [r.get('similarity', 0) for r in vector_results if r.get('similarity') is not None]
+        max_vector_score = max(valid_vector_scores, default=1.0)
+        for result in vector_results:
+            doc_id = result['id']
+            similarity = result.get('similarity', 0)
+            if similarity is None:
+                similarity = 0.0
+            normalized_vector_score = similarity / max_vector_score
+            combined_results[doc_id] = {
+                **result,
+                'vector_score': normalized_vector_score,
+                'keyword_score': 0.0,
+                'hybrid_score': normalized_vector_score * vector_weight
+            }
+        
+        # Process keyword results
+        valid_keyword_scores = [r.get('rank', 0) for r in keyword_results if r.get('rank') is not None]
+        max_keyword_score = max(valid_keyword_scores, default=1.0)
+        for result in keyword_results:
+            doc_id = result['id']
+            rank = result.get('rank', 0)
+            if rank is None:
+                rank = 0.0
+            normalized_keyword_score = rank / max_keyword_score
+            
+            if doc_id in combined_results:
+                # Update existing result
+                combined_results[doc_id]['keyword_score'] = normalized_keyword_score
+                combined_results[doc_id]['hybrid_score'] = (
+                    combined_results[doc_id]['vector_score'] * vector_weight +
+                    normalized_keyword_score * bm25_weight
+                )
+            else:
+                # Add new result (keyword-only)
+                combined_results[doc_id] = {
+                    **result,
+                    'vector_score': 0.0,
+                    'keyword_score': normalized_keyword_score,
+                    'hybrid_score': normalized_keyword_score * bm25_weight,
+                    'similarity': 0.0  # Add missing similarity field
+                }
+        
+        # Sort by hybrid score and return
+        sorted_results = sorted(
+            combined_results.values(),
+            key=lambda x: x['hybrid_score'],
+            reverse=True
+        )
+        
+        logger.info(f"Hybrid search combined {len(vector_results)} vector + {len(keyword_results)} keyword results")
+        return sorted_results
+    
     async def _fallback_similarity_search(
         self, 
         query_embedding: List[float], 
@@ -335,7 +594,7 @@ class EmbeddingService:
                     
                     results.append({
                         "id": emb["id"],
-                        "content": emb["content"],
+                        "content": emb["text_content"],  # Fixed field name
                         "metadata": emb["metadata"],
                         "similarity": similarity,
                         "document_id": emb["document_id"]

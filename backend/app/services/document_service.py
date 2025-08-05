@@ -17,6 +17,9 @@ import docx
 from bs4 import BeautifulSoup
 import markdown
 
+# LangChain for advanced text splitting
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
 # Google Drive API
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
@@ -77,7 +80,7 @@ class DocumentService:
         user_id: str
     ) -> Dict[str, Any]:
         """
-        Upload and process a document
+        Upload and process a document with enhanced status tracking
         
         Args:
             file: File object to upload
@@ -88,8 +91,13 @@ class DocumentService:
         Returns:
             Document metadata and processing status
         """
+        document_id = None
         try:
             print(f"🚀 RAG DEBUG: Starting document upload for '{filename}' (chatbot: {chatbot_id})")
+            
+            # Step 1: Create document record with 'uploading' status
+            document_id = await self._create_document_record(file, filename, chatbot_id, user_id)
+            await self._update_processing_status(document_id, 'uploading', 10)
             
             # Validate file
             file_info = await self._validate_file(file, filename)
@@ -121,14 +129,36 @@ class DocumentService:
             else:
                 print(f"⚠️ RAG DEBUG: Google Drive service not available - skipping cloud upload")
             
-            # Extract text content
+            # Step 2: Extract text content with 'extracting' status
+            await self._update_processing_status(document_id, 'extracting', 30)
             print(f"📝 RAG DEBUG: Extracting text content from {file_info['file_type']} file...")
             text_content = await self._extract_text(file, file_info['file_type'])
             text_length = len(text_content)
             print(f"✅ RAG DEBUG: Text extraction complete - {text_length} characters extracted")
             print(f"📄 RAG DEBUG: Text preview (first 200 chars): {text_content[:200]}...")
             
-            # Create document record
+            # Store extracted text
+            await self._store_extracted_text(document_id, text_content)
+            await self._update_processing_status(document_id, 'extracting', 50)
+            
+            # Step 3: Generate embeddings with 'embedding' status
+            await self._update_processing_status(document_id, 'embedding', 60)
+            await self._generate_embeddings_with_status(document_id, text_content)
+            
+            # Step 4: Mark as completed
+            await self._mark_completed(document_id)
+            
+            print(f"🎉 RAG DEBUG: Document upload pipeline complete for '{filename}'")
+            logger.info(f"Document {filename} uploaded and processed successfully")
+            
+            return await self._get_document_result(document_id)
+            
+        except Exception as e:
+            print(f"💥 RAG DEBUG: Document upload FAILED for '{filename}': {str(e)}")
+            if document_id:
+                await self._mark_failed(document_id, str(e))
+            logger.error(f"Document upload failed: {str(e)}")
+            raise Exception(f"Failed to upload document: {str(e)}")
             document_data = {
                 "chatbot_id": chatbot_id,
                 "filename": filename,
@@ -145,29 +175,40 @@ class DocumentService:
             document_id = document["id"]
             print(f"✅ RAG DEBUG: Document record created with ID: {document_id}")
             
-            # Store extracted text for later processing
-            print(f"💾 RAG DEBUG: Storing extracted text content for later processing...")
+            # Store extracted text and process immediately
+            print(f"💾 RAG DEBUG: Storing extracted text content...")
             try:
                 self.supabase.table("documents") \
                     .update({"extracted_text": text_content}) \
                     .eq("id", document_id) \
                     .execute()
-                print(f"✅ RAG DEBUG: Text content stored, ready for processing when triggered")
+                print(f"✅ RAG DEBUG: Text content stored")
             except Exception as e:
-                # If extracted_text column doesn't exist, process immediately as fallback
-                print(f"⚠️ RAG DEBUG: extracted_text column not found, processing immediately: {str(e)}")
+                print(f"⚠️ RAG DEBUG: Could not store extracted_text: {str(e)}")
+            
+            # Process document content into embeddings immediately
+            print(f"🔧 RAG DEBUG: Processing document content into embeddings...")
+            try:
                 await self._process_document_content(document_id, text_content)
+                
+                # Mark as processed
                 self.supabase.table("documents") \
                     .update({"processed": True}) \
                     .eq("id", document_id) \
                     .execute()
-                print(f"✅ RAG DEBUG: Document processed immediately (fallback mode)")
+                
+                print(f"✅ RAG DEBUG: Document processed and marked as complete")
+                processed_status = True
+                
+            except Exception as e:
+                print(f"❌ RAG DEBUG: Document processing failed: {str(e)}")
+                processed_status = False
             
             print(f"🎉 RAG DEBUG: Document upload pipeline complete for '{filename}'")
             logger.info(f"Document {filename} uploaded and processed successfully")
             return {
                 **document,
-                "processed": False,  # Will be processed when manually triggered
+                "processed": processed_status,
                 "text_length": text_length,
                 "text_stored": True
             }
@@ -403,10 +444,52 @@ class DocumentService:
             raise
     
     def _split_text_into_chunks(self, text: str) -> List[str]:
-        """Split text into overlapping chunks"""
+        """Split text into semantic chunks using LangChain RecursiveCharacterTextSplitter"""
         if len(text) <= self.CHUNK_SIZE:
             return [text]
         
+        try:
+            # Use LangChain's RecursiveCharacterTextSplitter for semantic chunking
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=self.CHUNK_SIZE,
+                chunk_overlap=self.CHUNK_OVERLAP,
+                length_function=len,
+                separators=[
+                    "\n\n",  # Paragraphs
+                    "\n",    # Lines
+                    ". ",    # Sentences
+                    "! ",    # Exclamation sentences
+                    "? ",    # Question sentences
+                    "; ",    # Semicolon clauses
+                    ", ",    # Comma clauses
+                    " ",     # Words
+                    ""       # Characters (fallback)
+                ],
+                keep_separator=True,  # Keep separators for context
+                add_start_index=False
+            )
+            
+            chunks = text_splitter.split_text(text)
+            
+            # Filter out empty chunks and very short chunks
+            meaningful_chunks = []
+            for chunk in chunks:
+                cleaned_chunk = chunk.strip()
+                if cleaned_chunk and len(cleaned_chunk) > 10:  # At least 10 characters
+                    meaningful_chunks.append(cleaned_chunk)
+            
+            logger.info(f"Semantic chunking: {len(text)} chars -> {len(meaningful_chunks)} chunks")
+            return meaningful_chunks
+            
+        except Exception as e:
+            logger.error(f"Semantic chunking failed: {e}")
+            logger.info("Falling back to simple word-boundary chunking")
+            
+            # Fallback to simple word-boundary chunking
+            return self._simple_word_boundary_chunking(text)
+    
+    def _simple_word_boundary_chunking(self, text: str) -> List[str]:
+        """Fallback method for simple word-boundary chunking"""
         chunks = []
         start = 0
         
@@ -650,6 +733,189 @@ class DocumentService:
         except Exception as e:
             logger.error(f"Delete document failed: {str(e)}")
             return False
+
+    # Enhanced status tracking methods
+    async def _create_document_record(self, file: BinaryIO, filename: str, chatbot_id: str, user_id: str) -> str:
+        """Create initial document record with uploading status"""
+        try:
+            file.seek(0)
+            content_hash = self._calculate_hash(file.read())
+            file.seek(0)
+            
+            # Get file info
+            file_info = await self._validate_file(file, filename)
+            
+            document_data = {
+                "chatbot_id": chatbot_id,
+                "filename": filename,
+                "file_type": file_info['file_type'],
+                "file_size": file_info['size'],
+                "content_hash": content_hash,
+                "processing_status": "uploading",
+                "processing_progress": 0,
+                "processed": False
+            }
+            
+            response = self.supabase.table("documents").insert(document_data).execute()
+            document_id = response.data[0]["id"]
+            print(f"✅ RAG DEBUG: Document record created with ID: {document_id}")
+            return document_id
+            
+        except Exception as e:
+            print(f"💥 RAG DEBUG: Failed to create document record: {str(e)}")
+            raise e
+
+    async def _update_processing_status(self, document_id: str, status: str, progress: int = 0, error_message: str = None):
+        """Update document processing status"""
+        try:
+            update_data = {
+                "processing_status": status,
+                "processing_progress": progress
+            }
+            if error_message:
+                update_data["error_message"] = error_message
+                
+            self.supabase.table("documents").update(update_data).eq("id", document_id).execute()
+            print(f"📊 RAG DEBUG: Updated status to '{status}' with progress {progress}%")
+            
+        except Exception as e:
+            print(f"⚠️ RAG DEBUG: Failed to update processing status: {str(e)}")
+
+    async def _store_extracted_text(self, document_id: str, text_content: str):
+        """Store extracted text content"""
+        try:
+            self.supabase.table("documents") \
+                .update({"extracted_text": text_content}) \
+                .eq("id", document_id) \
+                .execute()
+            print(f"✅ RAG DEBUG: Extracted text stored")
+        except Exception as e:
+            print(f"⚠️ RAG DEBUG: Could not store extracted_text: {str(e)}")
+
+    async def _generate_embeddings_with_status(self, document_id: str, text_content: str):
+        """Generate embeddings with progress tracking"""
+        try:
+            await self._process_document_content(document_id, text_content)
+            print(f"✅ RAG DEBUG: Embeddings generated successfully")
+        except Exception as e:
+            print(f"💥 RAG DEBUG: Embedding generation failed: {str(e)}")
+            raise e
+
+    async def _mark_completed(self, document_id: str):
+        """Mark document as completed"""
+        try:
+            self.supabase.table("documents") \
+                .update({
+                    "processed": True,
+                    "processing_status": "completed",
+                    "processing_progress": 100
+                }) \
+                .eq("id", document_id) \
+                .execute()
+            print(f"✅ RAG DEBUG: Document marked as completed")
+        except Exception as e:
+            print(f"⚠️ RAG DEBUG: Failed to mark as completed: {str(e)}")
+
+    async def _mark_failed(self, document_id: str, error_message: str):
+        """Mark document as failed"""
+        try:
+            self.supabase.table("documents") \
+                .update({
+                    "processing_status": "failed",
+                    "error_message": error_message
+                }) \
+                .eq("id", document_id) \
+                .execute()
+            print(f"❌ RAG DEBUG: Document marked as failed: {error_message}")
+        except Exception as e:
+            print(f"⚠️ RAG DEBUG: Failed to mark as failed: {str(e)}")
+
+    async def _update_chunk_counts(self, document_id: str, total_chunks: int, processed_chunks: int):
+        """Update chunk processing counts"""
+        try:
+            self.supabase.table("documents") \
+                .update({
+                    "total_chunks": total_chunks,
+                    "processed_chunks": processed_chunks
+                }) \
+                .eq("id", document_id) \
+                .execute()
+        except Exception as e:
+            print(f"⚠️ RAG DEBUG: Failed to update chunk counts: {str(e)}")
+
+    async def _get_document_result(self, document_id: str) -> Dict[str, Any]:
+        """Get final document result"""
+        try:
+            response = self.supabase.table("documents").select("*").eq("id", document_id).execute()
+            if response.data:
+                document = response.data[0]
+                return {
+                    **document,
+                    "processed": document.get("processed", False),
+                    "text_length": len(document.get("extracted_text", "")),
+                    "text_stored": True
+                }
+            else:
+                raise Exception("Document not found")
+        except Exception as e:
+            print(f"⚠️ RAG DEBUG: Failed to get document result: {str(e)}")
+            raise e
+
+    async def retry_failed_document(self, document_id: str) -> bool:
+        """Retry processing for failed documents"""
+        try:
+            # Get document
+            doc_response = self.supabase.table("documents").select("*").eq("id", document_id).execute()
+            
+            if not doc_response.data:
+                print(f"❌ RAG DEBUG: Document {document_id} not found")
+                return False
+                
+            doc = doc_response.data[0]
+            
+            if doc['processing_status'] == 'failed':
+                print(f"🔄 RAG DEBUG: Retrying failed document {document_id}")
+                
+                # Reset status and retry
+                await self._update_processing_status(document_id, 'pending', 0)
+                await self._update_processing_status(document_id, 'embedding', 60)
+                
+                if doc.get('extracted_text'):
+                    await self._process_document_content(document_id, doc['extracted_text'])
+                    await self._mark_completed(document_id)
+                    print(f"✅ RAG DEBUG: Document retry successful")
+                    return True
+                else:
+                    print(f"❌ RAG DEBUG: No extracted text found for retry")
+                    return False
+            else:
+                print(f"⚠️ RAG DEBUG: Document {document_id} is not in failed status")
+                return False
+                
+        except Exception as e:
+            print(f"💥 RAG DEBUG: Document retry failed: {str(e)}")
+            await self._mark_failed(document_id, str(e))
+            return False
+
+    async def get_document_status(self, document_id: str) -> Dict[str, Any]:
+        """Get document processing status"""
+        try:
+            response = self.supabase.table("documents").select("*").eq("id", document_id).execute()
+            if response.data:
+                doc = response.data[0]
+                return {
+                    "status": doc.get("processing_status", "unknown"),
+                    "progress": doc.get("processing_progress", 0),
+                    "total_chunks": doc.get("total_chunks", 0),
+                    "processed_chunks": doc.get("processed_chunks", 0),
+                    "error_message": doc.get("error_message"),
+                    "processed": doc.get("processed", False)
+                }
+            else:
+                return {"status": "not_found", "progress": 0}
+        except Exception as e:
+            print(f"⚠️ RAG DEBUG: Failed to get document status: {str(e)}")
+            return {"status": "error", "progress": 0, "error": str(e)}
 
 
 # Global instance

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
-from typing import List
+from typing import List, Optional
 import logging
 from app.models.chatbot import Chatbot, ChatbotCreate, ChatbotUpdate
 from app.core.database import get_supabase_admin
@@ -79,17 +79,42 @@ async def get_user_chatbots(user_email: str):
     
     supabase = get_supabase_admin()
     
-    # Get user ID from our users table
-    user_response = supabase.table("users").select("id").eq("email", user_email).limit(1).execute()
-    if not user_response.data:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    
-    user_id = user_response.data[0]["id"]
-    
-    # Get user's chatbots
-    response = supabase.table("chatbots").select("*").eq("user_id", user_id).execute()
-    logger.info(f"✅ Found {len(response.data)} chatbots")
-    return response.data
+    try:
+        # Get user ID from our users table
+        user_response = supabase.table("users").select("id").eq("email", user_email).limit(1).execute()
+        
+        if not user_response.data:
+            # User doesn't exist in our users table, create them
+            logger.info(f"👤 Creating new user record for: {user_email}")
+            import uuid
+            new_user_id = str(uuid.uuid4())
+            
+            new_user_data = {
+                "id": new_user_id,
+                "email": user_email,
+                "hashed_password": "supabase_auth",  # Placeholder since Supabase handles auth
+                "is_active": True,
+                "subscription_tier": "free"
+            }
+            
+            create_user_response = supabase.table("users").insert(new_user_data).execute()
+            user_id = create_user_response.data[0]["id"]
+            logger.info(f"✅ Created new user with ID: {user_id}")
+        else:
+            user_id = user_response.data[0]["id"]
+            logger.info(f"✅ Found existing user ID: {user_id}")
+        
+        # Get user's chatbots
+        response = supabase.table("chatbots").select("*").eq("user_id", user_id).execute()
+        logger.info(f"✅ Found {len(response.data)} chatbots")
+        return response.data
+        
+    except Exception as e:
+        logger.error(f"💥 Error getting chatbots: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get chatbots: {str(e)}"
+        )
 
 
 @router.get("/{chatbot_id}", response_model=Chatbot)
@@ -99,21 +124,49 @@ async def get_chatbot(chatbot_id: str, user_email: str):
     
     supabase = get_supabase_admin()
     
-    # Get user ID from our users table
-    user_response = supabase.table("users").select("id").eq("email", user_email).limit(1).execute()
-    if not user_response.data:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    
-    user_id = user_response.data[0]["id"]
-    
-    # Get chatbot belonging to this user
-    response = supabase.table("chatbots").select("*").eq("id", chatbot_id).eq("user_id", user_id).execute()
-    
-    if not response.data:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chatbot not found")
-    
-    logger.info(f"✅ Found chatbot: {response.data[0]['name']}")
-    return response.data[0]
+    try:
+        # Get user ID from our users table
+        user_response = supabase.table("users").select("id").eq("email", user_email).limit(1).execute()
+        
+        if not user_response.data:
+            # User doesn't exist in our users table, create them
+            logger.info(f"👤 Creating new user record for: {user_email}")
+            import uuid
+            new_user_id = str(uuid.uuid4())
+            
+            new_user_data = {
+                "id": new_user_id,
+                "email": user_email,
+                "hashed_password": "supabase_auth",  # Placeholder since Supabase handles auth
+                "is_active": True,
+                "subscription_tier": "free"
+            }
+            
+            create_user_response = supabase.table("users").insert(new_user_data).execute()
+            user_id = create_user_response.data[0]["id"]
+            logger.info(f"✅ Created new user with ID: {user_id}")
+        else:
+            user_id = user_response.data[0]["id"]
+            logger.info(f"✅ Found existing user ID: {user_id}")
+        
+        # Get chatbot belonging to this user
+        response = supabase.table("chatbots").select("*").eq("id", chatbot_id).eq("user_id", user_id).execute()
+        
+        if not response.data:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chatbot not found")
+        
+        logger.info(f"✅ Found chatbot: {response.data[0]['name']}")
+        return response.data[0]
+        
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
+    except Exception as e:
+        logger.error(f"💥 Error getting chatbot: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get chatbot: {str(e)}"
+        )
 
 
 @router.put("/{chatbot_id}", response_model=Chatbot)
@@ -233,7 +286,11 @@ class TestChatResponse(BaseModel):
     conversation_id: str = "test"
     rag_enabled: bool = False
     context_count: int = 0
+<<<<<<< Updated upstream
     model: str = "unknown"
+=======
+    model_used: Optional[str] = None
+>>>>>>> Stashed changes
 
 
 @router.post("/{chatbot_id}/test-chat", response_model=TestChatResponse)
@@ -307,7 +364,11 @@ async def test_chatbot_chat(chatbot_id: str, chat_request: TestChatRequest, user
             conversation_id="test",
             rag_enabled=response.get("rag_enabled", False),
             context_count=response.get("context_count", 0),
+<<<<<<< Updated upstream
             model=response.get("model", "unknown")
+=======
+            model_used=response.get("model", chat_req.model)
+>>>>>>> Stashed changes
         )
         
     except HTTPException:

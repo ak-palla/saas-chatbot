@@ -273,6 +273,84 @@ async def search_documents(
         )
 
 
+@router.get("/{document_id}/status")
+async def get_document_status(
+    document_id: str,
+    user_email: str
+):
+    """Get document processing status"""
+    try:
+        # Get user ID from email
+        supabase = get_supabase_admin()
+        user_response = supabase.table("users").select("id").eq("email", user_email).limit(1).execute()
+        
+        if not user_response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        user_id = user_response.data[0]["id"]
+        
+        # Verify document ownership
+        document = await document_service.get_document(document_id, user_id)
+        if not document:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found or access denied"
+            )
+
+        status = await document_service.get_document_status(document_id)
+        return status
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get document status: {str(e)}"
+        )
+
+
+@router.post("/{document_id}/retry")
+async def retry_document(
+    document_id: str,
+    user_email: str
+):
+    """Retry processing for a failed document"""
+    try:
+        # Get user ID from email
+        supabase = get_supabase_admin()
+        user_response = supabase.table("users").select("id").eq("email", user_email).limit(1).execute()
+        
+        if not user_response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        user_id = user_response.data[0]["id"]
+        
+        # Verify document ownership
+        document = await document_service.get_document(document_id, user_id)
+        if not document:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found or access denied"
+            )
+
+        success = await document_service.retry_failed_document(document_id)
+        return {"success": success}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retry document: {str(e)}"
+        )
+
+
 @router.post("/process/{chatbot_id}")
 async def process_documents(
     chatbot_id: str,

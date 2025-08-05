@@ -27,7 +27,7 @@ BEGIN
     SELECT
         ve.id,
         ve.document_id,
-        ve.content,
+        ve.text_content as content,
         ve.metadata,
         1 - (ve.embedding <=> query_embedding) as similarity
     FROM vector_embeddings ve

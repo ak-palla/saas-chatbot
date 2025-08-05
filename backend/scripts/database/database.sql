@@ -58,7 +58,7 @@ CREATE TABLE vector_embeddings (
     document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
     chunk_index INTEGER NOT NULL,
     text_content TEXT NOT NULL,
-    embedding VECTOR(1024), -- Groq embedding dimensions (typically 1024 or 768)
+    embedding VECTOR(384), -- Sentence Transformer embedding dimensions (all-MiniLM-L6-v2)
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ DEFAULT NOW()
 );

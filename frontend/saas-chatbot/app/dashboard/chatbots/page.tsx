@@ -50,7 +50,19 @@ export default function ChatbotsPage() {
         setChatbots(chatbotsData || []);
       } catch (err) {
         console.error('❌ Error fetching chatbots:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load chatbots';
+        
+        let errorMessage = 'Failed to load chatbots';
+        if (err instanceof Error) {
+          errorMessage = err.message;
+        }
+        
+        // Add more specific error messages
+        if (errorMessage.includes('Authentication failed')) {
+          errorMessage = 'Please log in to view your chatbots';
+        } else if (errorMessage.includes('Failed to fetch')) {
+          errorMessage = 'Unable to connect to server. Please check if the backend is running.';
+        }
+        
         setError(errorMessage);
         
         toast({
@@ -171,6 +183,24 @@ export default function ChatbotsPage() {
                     <TableCell colSpan={7} className="text-center py-12">
                       <LoadingSpinner size="lg" />
                       <div className="mt-4 text-muted-foreground">Loading chatbots...</div>
+                    </TableCell>
+                  </TableRow>
+                ) : error ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-12">
+                      <div className="text-destructive">
+                        <Bot className="mx-auto h-12 w-12 text-destructive/50" />
+                        <h3 className="mt-4 text-lg font-medium">Error Loading Chatbots</h3>
+                        <p className="mt-2 text-sm text-muted-foreground">{error}</p>
+                        <div className="mt-6">
+                          <Button 
+                            onClick={() => window.location.reload()} 
+                            variant="outline"
+                          >
+                            Try Again
+                          </Button>
+                        </div>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : filteredChatbots.length === 0 ? (

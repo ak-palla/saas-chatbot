@@ -7,6 +7,7 @@ import logging
 from typing import List, Dict, Any, Optional, Tuple
 from app.core.database import get_supabase
 from app.services.embedding_service import embedding_service
+from app.services.rag_metrics_service import rag_metrics_service
 
 logger = logging.getLogger(__name__)
 
@@ -86,16 +87,21 @@ class VectorStoreService:
             Tuple of (context_texts, source_metadata)
         """
         try:
+            # Start metrics tracking
+            tracking_id = rag_metrics_service.start_retrieval_tracking(query, chatbot_id, "vector")
+            
             print(f"🔍 RAG DEBUG: Starting context retrieval for query: '{query}'")
             print(f"📋 RAG DEBUG: Chatbot ID: {chatbot_id}, Max contexts: {max_contexts}, Threshold: {similarity_threshold}")
             
             # Generate embedding for the query
             print(f"🧠 RAG DEBUG: Generating query embedding...")
+            rag_metrics_service.log_embedding_phase(tracking_id)
             query_embedding = await self.embedding_service.generate_embedding(query)
             print(f"✅ RAG DEBUG: Query embedding generated (dimension: {len(query_embedding)})")
             
             # Perform similarity search
             print(f"🔎 RAG DEBUG: Performing similarity search in vector database...")
+            rag_metrics_service.log_search_phase(tracking_id)
             similar_chunks = await self.embedding_service.similarity_search(
                 query_embedding=query_embedding,
                 chatbot_id=chatbot_id,
@@ -130,12 +136,414 @@ class VectorStoreService:
                 print(f"📖 RAG DEBUG: Context {i+1} length: {len(context)} chars")
             
             logger.info(f"Retrieved {len(contexts)} relevant contexts for query")
+            
+            # Complete metrics tracking (temporarily disabled to isolate RAG core)
+            try:
+                rag_metrics_service.complete_retrieval_tracking(tracking_id, contexts, metadata, success=True)
+            except Exception as metrics_error:
+                print(f"⚠️ RAG DEBUG: Metrics tracking failed (non-critical): {metrics_error}")
+                # Continue anyway - don't let metrics break RAG functionality
+            
             return contexts, metadata
             
         except Exception as e:
             print(f"💥 RAG DEBUG: Context retrieval FAILED: {str(e)}")
             logger.error(f"Context retrieval failed: {str(e)}")
+            
+            # Complete metrics tracking with error (safe)
+            if 'tracking_id' in locals():
+                try:
+                    rag_metrics_service.complete_retrieval_tracking(tracking_id, [], [], success=False, error_message=str(e))
+                except Exception as metrics_error:
+                    print(f"⚠️ RAG DEBUG: Error metrics tracking failed: {metrics_error}")
+            
             return [], []
+    
+    async def retrieve_relevant_contexts_hybrid(
+        self, 
+        query: str, 
+        chatbot_id: str,
+        max_contexts: int = 3,
+        similarity_threshold: float = 0.7,
+        use_hybrid: bool = True,
+        bm25_weight: float = 0.3,
+        vector_weight: float = 0.7
+    ) -> Tuple[List[str], List[Dict[str, Any]]]:
+        """
+        Retrieve relevant document contexts using hybrid search (vector + keyword)
+        
+        Args:
+            query: User query/question
+            chatbot_id: ID of the chatbot to search documents for
+            max_contexts: Maximum number of context chunks to return
+            similarity_threshold: Minimum similarity threshold
+            use_hybrid: Whether to use hybrid search or fall back to vector only
+            bm25_weight: Weight for BM25 keyword search (0-1)
+            vector_weight: Weight for vector similarity search (0-1)
+            
+        Returns:
+            Tuple of (context_texts, source_metadata)
+        """
+        try:
+            # Start metrics tracking for hybrid search
+            tracking_id = rag_metrics_service.start_retrieval_tracking(query, chatbot_id, "hybrid")
+            
+            print(f"🔍 RAG DEBUG: Starting HYBRID context retrieval for query: '{query}'")
+            print(f"📋 RAG DEBUG: Hybrid={use_hybrid}, BM25 weight={bm25_weight}, Vector weight={vector_weight}")
+            
+            if use_hybrid:
+                # Use hybrid search combining vector similarity and keyword search
+                print(f"🚀 RAG DEBUG: Performing hybrid search...")
+                similar_chunks = await self.embedding_service.hybrid_search(
+                    query_text=query,
+                    chatbot_id=chatbot_id,
+                    limit=max_contexts * 2,  # Get more results to filter
+                    similarity_threshold=similarity_threshold,
+                    bm25_weight=bm25_weight,
+                    vector_weight=vector_weight
+                )
+                print(f"📊 RAG DEBUG: Hybrid search returned {len(similar_chunks)} chunks")
+            else:
+                # Fallback to vector-only search
+                print(f"🔎 RAG DEBUG: Falling back to vector-only search...")
+                query_embedding = await self.embedding_service.generate_embedding(query)
+                similar_chunks = await self.embedding_service.similarity_search(
+                    query_embedding=query_embedding,
+                    chatbot_id=chatbot_id,
+                    limit=max_contexts,
+                    similarity_threshold=similarity_threshold
+                )
+            
+            if not similar_chunks:
+                print(f"❌ RAG DEBUG: No relevant contexts found")
+                return [], []
+            
+            # Process and format results
+            contexts = []
+            metadata_list = []
+            
+            for i, chunk in enumerate(similar_chunks[:max_contexts]):
+                if not chunk.get('content'):
+                    print(f"⚠️ RAG DEBUG: Skipping chunk {i+1} - no content")
+                    continue
+                
+                content = chunk['content'].strip()
+                if len(content) < 10:  # Skip very short chunks
+                    continue
+                
+                similarity_score = chunk.get('similarity', 0.0)
+                hybrid_score = chunk.get('hybrid_score', similarity_score)
+                
+                print(f"📝 RAG DEBUG: Processing chunk {i+1}: hybrid_score={hybrid_score:.4f}, similarity={similarity_score:.4f}")
+                
+                contexts.append(content)
+                metadata_list.append({
+                    'document_id': chunk.get('document_id'),
+                    'chunk_id': chunk.get('id'),
+                    'similarity': similarity_score,
+                    'hybrid_score': hybrid_score,
+                    'vector_score': chunk.get('vector_score', 0.0),
+                    'keyword_score': chunk.get('keyword_score', 0.0),
+                    'metadata': chunk.get('metadata', {}),
+                    'content_preview': content[:200] + "..." if len(content) > 200 else content
+                })
+            
+            print(f"✅ RAG DEBUG: Hybrid retrieval complete - {len(contexts)} contexts selected")
+            
+            # Complete metrics tracking
+            rag_metrics_service.complete_retrieval_tracking(tracking_id, contexts, metadata_list, success=True)
+            
+            return contexts, metadata_list
+            
+        except Exception as e:
+            print(f"💥 RAG DEBUG: Hybrid context retrieval FAILED: {str(e)}")
+            logger.error(f"Hybrid context retrieval failed: {str(e)}")
+            
+            # Complete metrics tracking with error
+            if 'tracking_id' in locals():
+                rag_metrics_service.complete_retrieval_tracking(tracking_id, [], [], success=False, error_message=str(e))
+            
+            # Fallback to regular vector search
+            try:
+                print(f"🔄 RAG DEBUG: Falling back to regular vector search...")
+                return await self.retrieve_relevant_context(
+                    query, chatbot_id, max_contexts, similarity_threshold
+                )
+            except Exception as fallback_e:
+                logger.error(f"Fallback vector search also failed: {str(fallback_e)}")
+                return [], []
+    
+    async def retrieve_contexts_with_reranking(
+        self,
+        query: str,
+        chatbot_id: str,
+        max_contexts: int = 3,
+        initial_retrieval_limit: int = 10,
+        similarity_threshold: float = 0.7,
+        use_hybrid: bool = True,
+        use_reranking: bool = True
+    ) -> Tuple[List[str], List[Dict[str, Any]]]:
+        """
+        Advanced context retrieval with reranking and dynamic sizing
+        
+        Args:
+            query: User query/question
+            chatbot_id: ID of the chatbot to search documents for
+            max_contexts: Maximum number of final contexts to return
+            initial_retrieval_limit: Number of candidates to retrieve before reranking
+            similarity_threshold: Minimum similarity threshold
+            use_hybrid: Whether to use hybrid search
+            use_reranking: Whether to apply reranking
+            
+        Returns:
+            Tuple of (context_texts, source_metadata)
+        """
+        try:
+            # Start metrics tracking for reranked search
+            tracking_id = rag_metrics_service.start_retrieval_tracking(query, chatbot_id, "reranked")
+            
+            print(f"🎯 RAG DEBUG: Advanced context retrieval with reranking")
+            print(f"📊 RAG DEBUG: Initial limit={initial_retrieval_limit}, Final contexts={max_contexts}")
+            
+            # Step 1: Retrieve more candidates than needed
+            if use_hybrid:
+                candidate_contexts, candidate_metadata = await self.retrieve_relevant_contexts_hybrid(
+                    query=query,
+                    chatbot_id=chatbot_id,
+                    max_contexts=initial_retrieval_limit,
+                    similarity_threshold=similarity_threshold * 0.8  # Lower threshold for initial retrieval
+                )
+            else:
+                candidate_contexts, candidate_metadata = await self.retrieve_relevant_context(
+                    query=query,
+                    chatbot_id=chatbot_id,
+                    max_contexts=initial_retrieval_limit,
+                    similarity_threshold=similarity_threshold * 0.8
+                )
+            
+            if not candidate_contexts:
+                print(f"❌ RAG DEBUG: No candidate contexts found")
+                return [], []
+            
+            print(f"📋 RAG DEBUG: Retrieved {len(candidate_contexts)} candidate contexts")
+            
+            # Step 2: Apply reranking if enabled
+            if use_reranking and len(candidate_contexts) > max_contexts:
+                print(f"🔄 RAG DEBUG: Applying context reranking...")
+                rag_metrics_service.log_reranking_phase(tracking_id)
+                reranked_contexts, reranked_metadata = await self._rerank_contexts(
+                    query, candidate_contexts, candidate_metadata
+                )
+            else:
+                reranked_contexts = candidate_contexts
+                reranked_metadata = candidate_metadata
+            
+            # Step 3: Dynamic context sizing based on content length
+            final_contexts, final_metadata = self._dynamic_context_sizing(
+                query, reranked_contexts, reranked_metadata, max_contexts
+            )
+            
+            print(f"✅ RAG DEBUG: Final context selection: {len(final_contexts)} contexts")
+            
+            # Complete metrics tracking
+            rag_metrics_service.complete_retrieval_tracking(tracking_id, final_contexts, final_metadata, success=True)
+            
+            return final_contexts, final_metadata
+            
+        except Exception as e:
+            print(f"💥 RAG DEBUG: Advanced context retrieval FAILED: {str(e)}")
+            logger.error(f"Advanced context retrieval failed: {str(e)}")
+            
+            # Complete metrics tracking with error
+            if 'tracking_id' in locals():
+                rag_metrics_service.complete_retrieval_tracking(tracking_id, [], [], success=False, error_message=str(e))
+            
+            # Fallback to simple retrieval
+            return await self.retrieve_relevant_context(
+                query, chatbot_id, max_contexts, similarity_threshold
+            )
+    
+    async def _rerank_contexts(
+        self,
+        query: str,
+        contexts: List[str],
+        metadata: List[Dict[str, Any]]
+    ) -> Tuple[List[str], List[Dict[str, Any]]]:
+        """
+        Rerank contexts using cross-encoder scoring or advanced similarity
+        """
+        try:
+            print(f"🧠 RAG DEBUG: Reranking {len(contexts)} contexts...")
+            
+            # Calculate reranking scores using multiple factors
+            reranked_pairs = []
+            
+            for i, (context, meta) in enumerate(zip(contexts, metadata)):
+                # Calculate comprehensive relevance score
+                relevance_score = await self._calculate_relevance_score(query, context, meta)
+                reranked_pairs.append((context, meta, relevance_score))
+            
+            # Sort by relevance score
+            reranked_pairs.sort(key=lambda x: x[2], reverse=True)
+            
+            # Extract sorted contexts and metadata
+            reranked_contexts = [pair[0] for pair in reranked_pairs]
+            reranked_metadata = [pair[1] for pair in reranked_pairs]
+            
+            # Update metadata with reranking scores
+            for i, (meta, score) in enumerate(zip(reranked_metadata, [p[2] for p in reranked_pairs])):
+                meta['rerank_score'] = score
+                meta['rerank_position'] = i + 1
+            
+            print(f"✅ RAG DEBUG: Contexts reranked by relevance score")
+            return reranked_contexts, reranked_metadata
+            
+        except Exception as e:
+            logger.error(f"Context reranking failed: {str(e)}")
+            return contexts, metadata
+    
+    async def _calculate_relevance_score(
+        self,
+        query: str,
+        context: str,
+        metadata: Dict[str, Any]
+    ) -> float:
+        """
+        Calculate comprehensive relevance score for a context
+        """
+        try:
+            # Base score from existing similarity/hybrid score
+            base_score = max(
+                metadata.get('hybrid_score', 0.0),
+                metadata.get('similarity', 0.0)
+            )
+            
+            # Length penalty/bonus (prefer moderate-length contexts)
+            context_len = len(context)
+            if 200 <= context_len <= 800:
+                length_bonus = 0.1  # Ideal length
+            elif context_len < 100:
+                length_bonus = -0.2  # Too short
+            elif context_len > 1500:
+                length_bonus = -0.1  # Too long
+            else:
+                length_bonus = 0.0
+            
+            # Keyword overlap bonus
+            query_words = set(query.lower().split())
+            context_words = set(context.lower().split())
+            overlap_ratio = len(query_words.intersection(context_words)) / len(query_words) if query_words else 0
+            keyword_bonus = overlap_ratio * 0.15
+            
+            # Question type matching (simple heuristic)
+            question_bonus = 0.0
+            if any(word in query.lower() for word in ['what', 'how', 'why', 'when', 'where', 'who']):
+                if any(word in context.lower() for word in ['because', 'since', 'due to', 'reason', 'cause']):
+                    question_bonus = 0.05
+            
+            # Position bias (slightly prefer earlier chunks from documents)
+            chunk_index = metadata.get('metadata', {}).get('chunk_index', 0)
+            position_bonus = max(0, 0.02 - (chunk_index * 0.005))  # Small bonus for earlier chunks
+            
+            # Calculate final score
+            final_score = base_score + length_bonus + keyword_bonus + question_bonus + position_bonus
+            
+            return max(0.0, min(1.0, final_score))  # Clamp to [0, 1]
+            
+        except Exception as e:
+            logger.error(f"Relevance score calculation failed: {str(e)}")
+            return metadata.get('hybrid_score', metadata.get('similarity', 0.0))
+    
+    def _dynamic_context_sizing(
+        self,
+        query: str,
+        contexts: List[str],
+        metadata: List[Dict[str, Any]],
+        max_contexts: int
+    ) -> Tuple[List[str], List[Dict[str, Any]]]:
+        """
+        Dynamically determine optimal number of contexts based on content and query
+        """
+        try:
+            if not contexts:
+                return [], []
+            
+            # Calculate query complexity
+            query_complexity = self._assess_query_complexity(query)
+            
+            # Adjust max_contexts based on complexity
+            if query_complexity == "simple":
+                optimal_contexts = min(max_contexts, 2)
+            elif query_complexity == "complex":
+                optimal_contexts = min(max_contexts, 5)
+            else:  # moderate
+                optimal_contexts = max_contexts
+            
+            print(f"📏 RAG DEBUG: Query complexity='{query_complexity}', optimal contexts={optimal_contexts}")
+            
+            # Select contexts ensuring we don't exceed token limits
+            selected_contexts = []
+            selected_metadata = []
+            total_length = 0
+            max_total_length = 3000  # Approximate token limit for contexts
+            
+            for i, (context, meta) in enumerate(zip(contexts, metadata)):
+                if len(selected_contexts) >= optimal_contexts:
+                    break
+                
+                context_length = len(context)
+                if total_length + context_length <= max_total_length:
+                    selected_contexts.append(context)
+                    selected_metadata.append(meta)
+                    total_length += context_length
+                    
+                    # Update metadata with final selection info
+                    meta['final_position'] = len(selected_contexts)
+                    meta['total_context_length'] = total_length
+                else:
+                    print(f"⚠️ RAG DEBUG: Skipping context {i+1} - would exceed token limit")
+            
+            print(f"📊 RAG DEBUG: Selected {len(selected_contexts)} contexts (total length: {total_length} chars)")
+            return selected_contexts, selected_metadata
+            
+        except Exception as e:
+            logger.error(f"Dynamic context sizing failed: {str(e)}")
+            return contexts[:max_contexts], metadata[:max_contexts]
+    
+    def _assess_query_complexity(self, query: str) -> str:
+        """
+        Assess query complexity to determine optimal context count
+        """
+        try:
+            query_lower = query.lower()
+            words = query.split()
+            
+            # Complex queries indicators
+            complex_indicators = [
+                'compare', 'contrast', 'analyze', 'explain why', 'how does',
+                'what is the difference', 'relationship between', 'impact of',
+                'multiple', 'various', 'different types', 'several'
+            ]
+            
+            # Simple query indicators
+            simple_indicators = [
+                'what is', 'who is', 'when did', 'where is', 'define',
+                'meaning of', 'yes or no', 'true or false'
+            ]
+            
+            if any(indicator in query_lower for indicator in complex_indicators):
+                return "complex"
+            elif any(indicator in query_lower for indicator in simple_indicators):
+                return "simple"
+            elif len(words) > 10:
+                return "complex"
+            elif len(words) < 5:
+                return "simple"
+            else:
+                return "moderate"
+                
+        except Exception:
+            return "moderate"
     
     async def build_rag_prompt(
         self, 

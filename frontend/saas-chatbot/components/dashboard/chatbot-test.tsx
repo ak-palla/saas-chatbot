@@ -19,6 +19,9 @@ interface Message {
   role: 'user' | 'bot';
   content: string;
   timestamp: Date;
+  ragEnabled?: boolean;
+  contextCount?: number;
+  modelUsed?: string;
 }
 
 // Initialize Supabase client using the same method as API service
@@ -606,7 +609,7 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
         responseLength: response?.response?.length || 0,
         ragEnabled: response?.rag_enabled,
         contextCount: response?.context_count || 0,
-        model: response?.model,
+        model: response?.model_used,
         fullResponse: response
       });
       
@@ -619,6 +622,9 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
         role: 'bot',
         content: response.response,
         timestamp: new Date(),
+        ragEnabled: response.rag_enabled,
+        contextCount: response.context_count || 0,
+        modelUsed: response.model_used,
       };
 
       console.log('🎤 VOICE DEBUG: Adding bot response to chat:', botMessage);
@@ -719,8 +725,12 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
         responseLength: response?.response?.length || 0,
         ragEnabled: response?.rag_enabled,
         contextCount: response?.context_count || 0,
+<<<<<<< Updated upstream
         model: response?.model,
         responsePreview: response?.response?.substring(0, 100) + '...',
+=======
+        model: response?.model_used,
+>>>>>>> Stashed changes
         fullResponse: response
       });
       console.log('🔍 RAG FLOW DEBUG: RAG Analysis:');
@@ -738,6 +748,9 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
         role: 'bot',
         content: response.response,
         timestamp: new Date(),
+        ragEnabled: response.rag_enabled,
+        contextCount: response.context_count || 0,
+        modelUsed: response.model_used,
       };
 
       setMessages(prev => [...prev, botMessage]);
@@ -864,11 +877,20 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
                       }`}
                     >
                       <p className="text-sm">{message.content}</p>
-                      <p className={`text-xs mt-1 ${
-                        message.role === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                      }`}>
-                        {formatTime(message.timestamp)}
-                      </p>
+                      <div className="flex items-center justify-between mt-1">
+                        <p className={`text-xs ${
+                          message.role === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                        }`}>
+                          {formatTime(message.timestamp)}
+                        </p>
+                        {message.role === 'bot' && message.ragEnabled && (
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-medium">
+                              RAG ({message.contextCount} docs)
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     {message.role === 'user' && (
                       <div className="flex-shrink-0 w-8 h-8 bg-muted rounded-full flex items-center justify-center">
@@ -960,6 +982,7 @@ export function ChatbotTest({ chatbot }: ChatbotTestProps) {
             <p>• Check if the bot maintains context throughout the conversation</p>
             <p>• Verify that the bot's tone matches your system prompt</p>
             <p>• Test with documents you've uploaded to see if the RAG system works correctly</p>
+            <p>• Look for the green "RAG" badge on bot responses when document context is used</p>
           </div>
         </CardContent>
       </Card>

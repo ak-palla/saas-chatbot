@@ -12,6 +12,7 @@ from app.core.database import get_supabase
 from app.services.llm_service import llm_service
 from app.services.vector_store_service import vector_store_service
 from app.services.agent_service import agent_service
+from app.services.rag_metrics_service import rag_metrics_service
 from app.models.message import ChatMessage, ChatRequest, ChatResponse, StreamingChatChunk
 
 logger = logging.getLogger(__name__)
@@ -372,7 +373,8 @@ class MessageService:
                 contexts, context_metadata = await self.vector_store_service.retrieve_relevant_context(
                     query=request.message,
                     chatbot_id=request.chatbot_id,
-                    max_contexts=3
+                    max_contexts=3,
+                    similarity_threshold=0.3  # Lower threshold for better recall
                 )
                 
                 logger.info(f"📚 RAG FLOW DEBUG: Retrieved {len(contexts)} context chunks")
@@ -392,6 +394,11 @@ class MessageService:
                 
                 if contexts:
                     print(f"🧠 RAG DEBUG: Generating RAG-enhanced response with context...")
+                    
+                    # Track response generation time
+                    import time
+                    generation_start = time.time()
+                    
                     # Generate RAG response
                     response = await self.llm_service.generate_rag_response(
                         query=request.message,
@@ -401,9 +408,25 @@ class MessageService:
                         model=request.model
                     )
                     
+                    generation_time_ms = (time.time() - generation_start) * 1000
+                    
                     response["context_count"] = len(contexts)
                     response["rag_enabled"] = True
                     print(f"✅ RAG DEBUG: RAG response generated successfully with {len(contexts)} contexts")
+                    
+                    # Log response metrics
+                    rag_metrics_service.log_response_metrics(
+                        query=request.message,
+                        chatbot_id=request.chatbot_id,
+                        response=response.get("content", ""),
+                        contexts_count=len(contexts),
+                        generation_time_ms=generation_time_ms,
+                        model_used=response.get("model", request.model or "unknown"),
+                        rag_enabled=True,
+                        voice_optimized=hasattr(request, 'voice_optimized') and request.voice_optimized,
+                        success=True
+                    )
+                    
                     return response
                 else:
                     print(f"🔄 RAG DEBUG: No context available, generating standard response...")

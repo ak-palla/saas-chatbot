@@ -12,6 +12,7 @@ from datetime import datetime
 from app.services.stt_service import stt_service
 from app.services.tts_service import tts_service
 from app.services.message_service import message_service
+from app.services.voice_rag_service import voice_rag_service
 from app.models.message import ChatRequest
 from app.core.websocket_manager import websocket_manager
 
@@ -120,9 +121,18 @@ class VoiceService:
             
             llm_start = time.time()
             
-            # Create chat request
+            # Enhance query for voice RAG optimization
+            print(f"🎤 VOICE RAG DEBUG: Original transcription: '{transcribed_text}'")
+            enhanced_query = voice_rag_service.enhance_voice_query(transcribed_text)
+            print(f"🎯 VOICE RAG DEBUG: Enhanced query: '{enhanced_query}'")
+            
+            # Analyze query intent for RAG optimization
+            query_analysis = voice_rag_service.assess_voice_query_intent(enhanced_query)
+            print(f"📊 VOICE RAG DEBUG: Query analysis: {query_analysis}")
+            
+            # Create chat request with enhanced query
             chat_request = ChatRequest(
-                message=transcribed_text,
+                message=enhanced_query,  # Use enhanced query instead of raw transcription
                 chatbot_id=chatbot_id,
                 conversation_id=conversation_id,
                 use_rag=True,
@@ -146,7 +156,27 @@ class VoiceService:
             logger.info(f"🔍 RAG DEBUG (Voice): model={chat_response.model}")
             
             llm_time = time.time() - llm_start
-            response_text = chat_response.content
+            raw_response_text = chat_response.content
+            
+            # Format response for voice output
+            print(f"🗣️ VOICE RAG DEBUG: Raw response: '{raw_response_text[:100]}...'")
+            response_text = voice_rag_service.format_response_for_voice(
+                raw_response_text,
+                contexts=chat_response.contexts if hasattr(chat_response, 'contexts') else None,
+                max_length=400  # Longer responses for voice can be acceptable
+            )
+            print(f"🎵 VOICE RAG DEBUG: Voice-optimized response: '{response_text[:100]}...'")
+            
+            # Store both versions in response metadata
+            if not hasattr(chat_response, 'voice_metadata'):
+                chat_response.voice_metadata = {}
+            chat_response.voice_metadata.update({
+                'original_transcription': transcribed_text,
+                'enhanced_query': enhanced_query,
+                'query_analysis': query_analysis,
+                'raw_response': raw_response_text,
+                'voice_optimized_response': response_text
+            })
             
             logger.info(f"LLM completed in {llm_time:.2f}s: '{response_text[:100]}...'")
             
@@ -316,8 +346,12 @@ class VoiceService:
                 "message": "Generating response..."
             }
             
+            # Voice RAG optimization for streaming
+            enhanced_query = voice_rag_service.enhance_voice_query(transcribed_text)
+            query_analysis = voice_rag_service.assess_voice_query_intent(enhanced_query)
+            
             chat_request = ChatRequest(
-                message=transcribed_text,
+                message=enhanced_query,  # Use enhanced query
                 chatbot_id=chatbot_id,
                 conversation_id=conversation_id,
                 use_rag=True,
@@ -329,9 +363,22 @@ class VoiceService:
                 user_id=user_id
             )
             
+            # Format response for voice
+            voice_optimized_response = voice_rag_service.format_response_for_voice(
+                chat_response.content,
+                contexts=chat_response.contexts if hasattr(chat_response, 'contexts') else None,
+                max_length=350
+            )
+            
             yield {
                 "type": "response_generated",
-                "text": chat_response.content,
+                "text": voice_optimized_response,
+                "original_text": chat_response.content,
+                "voice_metadata": {
+                    "original_transcription": transcribed_text,
+                    "enhanced_query": enhanced_query,
+                    "query_analysis": query_analysis
+                },
                 "conversation_id": chat_response.conversation_id,
                 "model": chat_response.model
             }
