@@ -116,3 +116,27 @@ async def get_current_user_websocket(token: str) -> dict:
         return response.data[0]
     except Exception as e:
         raise ValueError(f"Could not validate user: {str(e)}")
+
+
+async def get_user_id_from_email(email: str) -> str:
+    """
+    Get user ID from email address
+    Used by performance monitoring and other services
+    """
+    supabase = get_supabase()
+    try:
+        response = supabase.table("users").select("id").eq("email", email).execute()
+        if not response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        return response.data[0]["id"]
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting user ID from email: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Could not get user ID: {str(e)}"
+        )
