@@ -283,9 +283,73 @@ CREATE TRIGGER update_widget_deployments_updated_at
     BEFORE UPDATE ON widget_deployments 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_widget_ab_results_updated_at 
-    BEFORE UPDATE ON widget_ab_test_results 
+CREATE TRIGGER update_widget_ab_results_updated_at
+    BEFORE UPDATE ON widget_ab_test_results
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Deployment Checks table - Track automated deployment verification
+CREATE TABLE deployment_checks (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    chatbot_id UUID NOT NULL REFERENCES chatbots(id) ON DELETE CASCADE,
+    domain VARCHAR(255) NOT NULL,
+
+    -- Check Results Summary
+    total_checks INTEGER DEFAULT 0,
+    passed_checks INTEGER DEFAULT 0,
+    failed_checks INTEGER DEFAULT 0,
+    warning_checks INTEGER DEFAULT 0,
+    overall_status VARCHAR(20) DEFAULT 'unknown' CHECK (overall_status IN ('passed', 'failed', 'warning', 'unknown')),
+
+    -- Metadata
+    check_duration_ms INTEGER,
+    triggered_by VARCHAR(50) DEFAULT 'manual', -- 'manual', 'scheduled', 'deployment'
+
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Deployment Check Details table - Store individual check results
+CREATE TABLE deployment_check_details (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    deployment_check_id UUID NOT NULL REFERENCES deployment_checks(id) ON DELETE CASCADE,
+
+    -- Check Information
+    check_type VARCHAR(100) NOT NULL, -- 'domain_verification', 'widget_script', 'api_connectivity', etc.
+    status VARCHAR(20) NOT NULL CHECK (status IN ('passed', 'failed', 'warning')),
+    message TEXT NOT NULL,
+    details JSONB DEFAULT '{}',
+
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Performance Metrics table - Store system performance data
+CREATE TABLE performance_metrics (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    -- Metric Information
+    metric_name VARCHAR(100) NOT NULL,
+    value DECIMAL(10,2) NOT NULL,
+    unit VARCHAR(20) NOT NULL,
+    chatbot_id UUID REFERENCES chatbots(id) ON DELETE SET NULL,
+
+    -- Metadata
+    metadata JSONB DEFAULT '{}',
+
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for deployment checks
+CREATE INDEX idx_deployment_checks_chatbot_id ON deployment_checks(chatbot_id);
+CREATE INDEX idx_deployment_checks_domain ON deployment_checks(domain);
+CREATE INDEX idx_deployment_checks_status ON deployment_checks(overall_status);
+CREATE INDEX idx_deployment_checks_created_at ON deployment_checks(created_at);
+
+CREATE INDEX idx_deployment_check_details_check_id ON deployment_check_details(deployment_check_id);
+CREATE INDEX idx_deployment_check_details_type ON deployment_check_details(check_type);
+CREATE INDEX idx_deployment_check_details_status ON deployment_check_details(status);
+
+CREATE INDEX idx_performance_metrics_name ON performance_metrics(metric_name);
+CREATE INDEX idx_performance_metrics_chatbot_id ON performance_metrics(chatbot_id);
+CREATE INDEX idx_performance_metrics_created_at ON performance_metrics(created_at);
 
 -- Insert default widget templates
 INSERT INTO widget_templates (name, description, category, css_template, config_template) VALUES

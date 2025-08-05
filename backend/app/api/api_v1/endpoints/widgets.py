@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Query, Depends
+from fastapi import APIRouter, HTTPException, status, Query, Depends, BackgroundTasks
 from typing import List, Optional, Dict, Any
 import logging
 from datetime import datetime, timedelta
@@ -14,6 +14,7 @@ from app.models.widget import (
     WidgetAnalyticsSummary, WidgetPerformanceMetrics, WidgetEngagementMetrics,
     WidgetAnalyticsReport, WidgetABTestResult
 )
+from app.services.deployment_service import deployment_service
 from app.core.database import get_supabase_admin
 from app.core.config import settings
 
@@ -389,12 +390,165 @@ async def get_widget_deployments(
         logger.info(f"✅ Found {len(response.data)} widget deployments")
         
         return response.data
-        
+
     except Exception as e:
         logger.error(f"💥 Error getting widget deployments: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get widget deployments: {str(e)}"
+        )
+
+# Widget Health Check and Verification Endpoints
+
+@router.post("/{chatbot_id}/verify-domain")
+async def verify_widget_domain(
+    chatbot_id: str,
+    domain: str,
+    user_email: str
+):
+    """Verify domain for widget deployment"""
+    logger.info(f"🔍 Verifying domain {domain} for chatbot {chatbot_id}")
+
+    supabase = get_supabase_admin()
+    user_id = await get_user_id_from_email(user_email)
+
+    try:
+        # Verify chatbot ownership
+        chatbot_response = supabase.table("chatbots").select("*").eq("id", chatbot_id).eq("user_id", user_id).execute()
+        if not chatbot_response.data:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chatbot not found")
+
+        # Perform domain verification
+        verification_result = await deployment_service.verify_domain(domain)
+
+        return {
+            "domain": verification_result.domain,
+            "verified": verification_result.verified,
+            "ssl_valid": verification_result.ssl_valid,
+            "ssl_expires": verification_result.ssl_expires.isoformat() if verification_result.ssl_expires else None,
+            "error_message": verification_result.error_message,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"💥 Error verifying domain: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to verify domain: {str(e)}"
+        )
+
+@router.post("/{chatbot_id}/health-check")
+async def perform_widget_health_check(
+    chatbot_id: str,
+    domain: str,
+    user_email: str,
+    background_tasks: BackgroundTasks
+):
+    """Perform comprehensive health check for widget deployment"""
+    logger.info(f"🏥 Performing health check for chatbot {chatbot_id} on domain {domain}")
+
+    supabase = get_supabase_admin()
+    user_id = await get_user_id_from_email(user_email)
+
+    try:
+        # Verify chatbot ownership
+        chatbot_response = supabase.table("chatbots").select("*").eq("id", chatbot_id).eq("user_id", user_id).execute()
+        if not chatbot_response.data:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chatbot not found")
+
+        # Perform health check
+        health_checks = await deployment_service.perform_widget_health_check(chatbot_id, domain)
+
+        # Store results in background
+        background_tasks.add_task(
+            deployment_service.store_deployment_check_results,
+            chatbot_id,
+            domain,
+            health_checks
+        )
+
+        # Prepare response
+        passed_checks = [c for c in health_checks if c.status == 'passed']
+        failed_checks = [c for c in health_checks if c.status == 'failed']
+        warning_checks = [c for c in health_checks if c.status == 'warning']
+
+        overall_status = 'passed'
+        if failed_checks:
+            overall_status = 'failed'
+        elif warning_checks:
+            overall_status = 'warning'
+
+        return {
+            "chatbot_id": chatbot_id,
+            "domain": domain,
+            "overall_status": overall_status,
+            "total_checks": len(health_checks),
+            "passed_checks": len(passed_checks),
+            "failed_checks": len(failed_checks),
+            "warning_checks": len(warning_checks),
+            "checks": [
+                {
+                    "check_type": check.check_type,
+                    "status": check.status,
+                    "message": check.message,
+                    "details": check.details,
+                    "timestamp": check.timestamp.isoformat()
+                }
+                for check in health_checks
+            ],
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"💥 Error performing health check: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to perform health check: {str(e)}"
+        )
+
+@router.get("/{chatbot_id}/deployment-history")
+async def get_widget_deployment_history(
+    chatbot_id: str,
+    user_email: str,
+    days: int = Query(default=30, ge=1, le=90, description="Days of history to retrieve")
+):
+    """Get deployment check history for a chatbot"""
+    logger.info(f"📊 Getting deployment history for chatbot {chatbot_id}")
+
+    supabase = get_supabase_admin()
+    user_id = await get_user_id_from_email(user_email)
+
+    try:
+        # Verify chatbot ownership
+        chatbot_response = supabase.table("chatbots").select("*").eq("id", chatbot_id).eq("user_id", user_id).execute()
+        if not chatbot_response.data:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chatbot not found")
+
+        # Get deployment history
+        history = await deployment_service.get_deployment_history(chatbot_id, days)
+
+        return {
+            "chatbot_id": chatbot_id,
+            "history": history,
+            "total_checks": len(history),
+            "time_range": {
+                "days": days,
+                "start_date": (datetime.utcnow() - timedelta(days=days)).isoformat(),
+                "end_date": datetime.utcnow().isoformat()
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"💥 Error getting deployment history: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get deployment history: {str(e)}"
         )
 
 # Public Widget Configuration Endpoint (for widget loading)

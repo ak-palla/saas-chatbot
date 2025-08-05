@@ -1,0 +1,61 @@
+{
+  "name": "chatbot-saas-shopify-app",
+  "version": "1.0.0",
+  "description": "Shopify app for integrating Chatbot SaaS widgets with e-commerce features",
+  "main": "web/index.js",
+  "scripts": {
+    "build": "shopify app build",
+    "dev": "shopify app dev",
+    "info": "shopify app info",
+    "scaffold": "shopify app scaffold",
+    "deploy": "shopify app deploy",
+    "config:link": "shopify app config link",
+    "config:push": "shopify app config push",
+    "config:use": "shopify app config use",
+    "env": "shopify app env",
+    "log:tail": "shopify app logs tail",
+    "generate": "shopify app generate",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint . --ext .js,.ts,.tsx",
+    "lint:fix": "eslint . --ext .js,.ts,.tsx --fix",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "shopify",
+    "shopify-app",
+    "chatbot",
+    "ai",
+    "customer-support",
+    "ecommerce",
+    "saas"
+  ],
+  "author": "Chatbot SaaS Team",
+  "license": "MIT",
+  "dependencies": {
+    "@shopify/app": "3.49.5",
+    "@shopify/cli": "3.49.5",
+    "@shopify/theme": "3.49.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.59.0",
+    "@typescript-eslint/parser": "^5.59.0",
+    "eslint": "^8.40.0",
+    "typescript": "^5.0.0",
+    "vitest": "^0.31.0"
+  },
+  "workspaces": [
+    "web",
+    "extensions/*"
+  ],
+  "trustedDependencies": [
+    "@shopify/plugin-cloudflare"
+  ],
+  "resolutions": {
+    "undici": "5.14.0"
+  },
+  "overrides": {
+    "undici": "5.14.0"
+  }
+}

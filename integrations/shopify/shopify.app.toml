@@ -1,0 +1,32 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+name = "chatbot-saas-widget"
+client_id = "your-client-id-here"
+application_url = "https://your-app-domain.com"
+embedded = true
+
+[access_scopes]
+# https://shopify.dev/docs/api/usage/access-scopes
+scopes = "write_script_tags,read_products,read_orders,read_customers"
+
+[auth]
+redirect_urls = [
+  "https://your-app-domain.com/auth/callback",
+  "https://your-app-domain.com/auth/shopify/callback"
+]
+
+[webhooks]
+api_version = "2023-07"
+
+[pos]
+embedded = false
+
+[build]
+automatically_update_urls_on_dev = true
+dev_store_url = "your-dev-store.myshopify.com"
+include_config_on_deploy = true
+
+[app_proxy]
+url = "https://your-app-domain.com/proxy"
+subpath = "chatbot"
+prefix = "apps"
