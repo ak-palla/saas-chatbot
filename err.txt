@@ -1,0 +1,270 @@
+(venv) D:\chat_service\backend>  python test_rag_comprehensive.py
+🎯 Comprehensive RAG System Test
+========================================
+Token will not been saved to git credential helper. Pass `add_to_git_credential=True` if you want to set the git credential as well.
+Failed to login to Hugging Face: Invalid token passed!
+Failed to load model BAAI/bge-small-en-v1.5: 401 Client Error. (Request ID: Root=1-68919865-16dbb47062dcbd3f178f1afe;ef705566-343d-471c-a1a6-47e3c683c0bb)
+
+Repository Not Found for url: https://huggingface.co/api/models/BAAI/bge-small-en-v1.5.
+Please make sure you specified the correct `repo_id` and `repo_type`.
+If you are trying to access a private or gated repo, make sure you are authenticated.
+User Access Token "saas-chatbot" is expired
+Using dummy embeddings - model loading failed
+Failed to initialize Google Drive service: Service account info was not in the expected format, missing fields client_email, token_uri.
+🤖 Testing with chatbot: 5e69ab00...
+👤 Testing with user: 6ff34613...
+
+📊 Test 1: Document and Embedding Status
+------------------------------
+📄 Documents found: 1
+  • Customer_Support_Policy_Manual.pdf (processed: True)
+🔢 Vector embeddings found: 2
+  • Sample embedding dimension: 4704
+  • Sample content length: 365 chars
+
+🧠 Test 2: Embedding Generation
+------------------------------
+📝 Test query: 'What are your customer support business hours?'
+🧠 RAG DEBUG: Generating embedding for text (length: 46 chars)
+🔧 RAG DEBUG: Using model: all-MiniLM-L6-v2
+✂️ RAG DEBUG: Text prepared (cleaned length: 46 chars)
+✅ RAG DEBUG: Using actual model for embedding generation
+🎯 RAG DEBUG: Real embedding generated - dimension: 384
+📊 RAG DEBUG: Embedding vector preview: [-0.0676, -0.0025, ..., -0.0310]
+✅ Embedding generated: 384 dimensions
+📊 Embedding preview: [-0.0676, -0.0025, ..., -0.0310]
+
+🔍 Test 3: Vector Store Retrieval
+------------------------------
+🔍 RAG DEBUG: Starting context retrieval for query: 'What are your customer support business hours?'
+📋 RAG DEBUG: Chatbot ID: 5e69ab00-d866-46ab-b20b-fec3338a0895, Max contexts: 3, Threshold: 0.1
+🧠 RAG DEBUG: Generating query embedding...
+🧠 RAG DEBUG: Generating embedding for text (length: 46 chars)
+🔧 RAG DEBUG: Using model: all-MiniLM-L6-v2
+✂️ RAG DEBUG: Text prepared (cleaned length: 46 chars)
+✅ RAG DEBUG: Using actual model for embedding generation
+🎯 RAG DEBUG: Real embedding generated - dimension: 384
+📊 RAG DEBUG: Embedding vector preview: [-0.0676, -0.0025, ..., -0.0310]
+✅ RAG DEBUG: Query embedding generated (dimension: 384)
+🔎 RAG DEBUG: Performing similarity search in vector database...
+📊 RAG DEBUG: Similarity search returned 2 chunks
+📝 RAG DEBUG: Processing chunk 1: similarity=0.6244
+📄 RAG DEBUG: Chunk content preview: Customer Support Policy Manual
+1. Introduction
+Welcome to our customer support policy guide. This do...
+📝 RAG DEBUG: Processing chunk 2: similarity=0.3609
+📄 RAG DEBUG: Chunk content preview: Customer Support Policy Manual
+6. Escalation Matrix
+If your query is unresolved:
+1. Level 1: Support...
+🎯 RAG DEBUG: Context retrieval complete - 2 contexts retrieved
+📖 RAG DEBUG: Context 1 length: 997 chars
+📖 RAG DEBUG: Context 2 length: 365 chars
+📚 Retrieved contexts: 2
+  📄 Context 1 (similarity: 0.624376796223117):
+      'Customer Support Policy Manual
+1. Introduction
+Welcome to our customer support policy guide. This do...'
+  📄 Context 2 (similarity: 0.36092808842659):
+      'Customer Support Policy Manual
+6. Escalation Matrix
+If your query is unresolved:
+1. Level 1: Support...'
+
+🔬 Test 4: Hybrid Search
+------------------------------
+🔍 RAG DEBUG: Starting HYBRID context retrieval for query: 'What are your customer support business hours?'
+📋 RAG DEBUG: Hybrid=True, BM25 weight=0.3, Vector weight=0.7
+🚀 RAG DEBUG: Performing hybrid search...
+🧠 RAG DEBUG: Generating embedding for text (length: 46 chars)
+🔧 RAG DEBUG: Using model: all-MiniLM-L6-v2
+✂️ RAG DEBUG: Text prepared (cleaned length: 46 chars)
+✅ RAG DEBUG: Using actual model for embedding generation
+🎯 RAG DEBUG: Real embedding generated - dimension: 384
+📊 RAG DEBUG: Embedding vector preview: [-0.0676, -0.0025, ..., -0.0310]
+Keyword search failed, using fallback: {'code': 'PGRST202', 'details': 'Searched for the function public.execute_sql with parameters params, sql_query or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.', 'hint': None, 'message': 'Could not find the function public.execute_sql(params, sql_query) in the schema cache'}
+Simple keyword search failed: {'message': 'JSON could not be generated', 'code': 500, 'hint': 'Refer to full message for details', 'details': 'b\'<!DOCTYPE html>\\n<!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en-US"> <![endif]-->\\n<!--[if IE 7]>    <html class="no-js ie7 oldie" lang="en-US"> <![endif]-->\\n<!--[if IE 8]>    <html class="no-js ie8 oldie" lang="en-US"> <![endif]-->\\n<!--[if gt IE 8]><!--> <html class="no-js" lang="en-US"> <!--<![endif]-->\\n<head>\\n<title>Worker threw exception | kcbiyzfcqvcgvnjxiytv.supabase.co | Cloudflare</title>\\n<meta charset="UTF-8" />\\n<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />\\n<meta http-equiv="X-UA-Compatible" content="IE=Edge" />\\n<meta name="robots" content="noindex, nofollow" />\\n<meta name="viewport" content="width=device-width,initial-scale=1" />\\n<link rel="stylesheet" id="cf_styles-css" href="/cdn-cgi/styles/cf.errors.css" />\\n<!--[if lt IE 9]><link rel="stylesheet" id=\\\'cf_styles-ie-css\\\' href="/cdn-cgi/styles/cf.errors.ie.css" /><![endif]-->\\n<style>body{margin:0;padding:0}</style>\\n\\n\\n<!--[if gte IE 10]><!-->\\n<script>\\n  if (!navigator.cookieEnabled) {\\n    window.addEventListener(\\\'DOMContentLoaded\\\', function () {\\n      var cookieEl = document.getElementById(\\\'cookie-alert\\\');\\n      cookieEl.style.display = \\\'block\\\';\\n    })\\n  }\\n</script>\\n<!--<![endif]-->\\n\\n\\n</head>\\n<body>\\n  <div id="cf-wrapper">\\n    <div class="cf-alert cf-alert-error cf-cookie-error" id="cookie-alert" data-translate="enable_cookies">Please enable cookies.</div>\\n    <div id="cf-error-details" class="cf-error-details-wrapper">\\n      <div class="cf-wrapper cf-header cf-error-overview">\\n        <h1>\\n          <span class="cf-error-type" data-translate="error">Error</span>\\n          <span class="cf-error-code">1101</span>\\n          <small class="heading-ray-id">Ray ID: 96a3f043daafffa1 &bull; 2025-08-05 05:36:44 UTC</small>\\n        </h1>\\n        <h2 class="cf-subheadline" data-translate="error_desc">Worker threw exception</h2>\\n      </div><!-- /.header -->\\n\\n      <section></section><!-- spacer -->\\n\\n      <div class="cf-section cf-wrapper">\\n        <div class="cf-columns two">\\n          <div class="cf-column">\\n            <h2 data-translate="what_happened">What happened?</h2>\\n            <p>You\\\'ve requested a page on a website (kcbiyzfcqvcgvnjxiytv.supabase.co) that is on the <a href="https://www.cloudflare.com/5xx-error-landing/" target="_blank">Cloudflare</a> network. An unknown error occurred while rendering the page.</p>\\n          </div>\\n\\n          \\n          <div class="cf-column">\\n           
+ <h2 data-translate="what_can_i_do">What can I do?</h2>\\n            <p><strong>If you are the owner of this website:</strong><br />refer to <a href="https://developers.cloudflare.com/workers/observability/errors/" target="_blank">Workers - Errors and Exceptions</a> and check Workers Logs for kcbiyzfcqvcgvnjxiytv.supabase.co.</p>\\n          </div>\\n          \\n        </div>\\n      </div><!-- /.section -->\\n\\n      <div class="cf-error-footer cf-wrapper w-240 lg:w-full py-10 sm:py-4 sm:px-8 mx-auto text-center sm:text-left border-solid border-0 border-t border-gray-300">\\n  <p class="text-13">\\n    <span class="cf-footer-item sm:block sm:mb-1">Cloudflare Ray ID: <strong class="font-semibold">96a3f043daafffa1</strong></span>\\n    <span class="cf-footer-separator sm:hidden">&bull;</span>\\n    <span id="cf-footer-item-ip" class="cf-footer-item hidden sm:block sm:mb-1">\\n      Your IP:\\n      <button type="button" id="cf-footer-ip-reveal" class="cf-footer-ip-reveal-btn">Click to reveal</button>\\n      <span class="hidden" id="cf-footer-ip">103.217.89.135</span>\\n      <span class="cf-footer-separator sm:hidden">&bull;</span>\\n    </span>\\n    <span class="cf-footer-item sm:block sm:mb-1"><span>Performance &amp; security by</span> <a rel="noopener noreferrer" href="https://www.cloudflare.com/5xx-error-landing" id="brand_link" target="_blank">Cloudflare</a></span>\\n    \\n  </p>\\n  <script>(function(){function d(){var b=a.getElementById("cf-footer-item-ip"),c=a.getElementById("cf-footer-ip-reveal");b&&"classList"in b&&(b.classList.remove("hidden"),c.addEventListener("click",function(){c.classList.add("hidden");a.getElementById("cf-footer-ip").classList.remove("hidden")}))}var a=document;document.addEventListener&&a.addEventListener("DOMContentLoaded",d)})();</script>\\n</div><!-- /.error-footer -->\\n\\n\\n    </div><!-- /#cf-error-details -->\\n  </div><!-- /#cf-wrapper -->\\n\\n  <script>\\n  window._cf_translation = {};\\n  \\n  \\n</script>\\n\\n</body>\\n</html>\\n\''}    
+📊 RAG DEBUG: Hybrid search returned 2 chunks
+📝 RAG DEBUG: Processing chunk 1: hybrid_score=0.7000, similarity=0.6244
+📝 RAG DEBUG: Processing chunk 2: hybrid_score=0.4046, similarity=0.3609
+✅ RAG DEBUG: Hybrid retrieval complete - 2 contexts selected
+🎯 Hybrid search results: 2
+  📄 Hybrid 1 (similarity: 0.624376796223117):
+      'Customer Support Policy Manual
+1. Introduction
+Welcome to our customer support policy guide. This do...'
+  📄 Hybrid 2 (similarity: 0.36092808842659):
+      'Customer Support Policy Manual
+6. Escalation Matrix
+If your query is unresolved:
+1. Level 1: Support...'
+
+💬 Test 5: Message Service RAG Integration
+------------------------------
+🤖 Chatbot: voice-agent 
+🎯 Generating RAG response...
+🤖 RAG DEBUG: Starting LLM response generation
+📊 RAG DEBUG: RAG enabled: True
+🎯 RAG DEBUG: Chatbot ID: 5e69ab00-d866-46ab-b20b-fec3338a0895
+💬 RAG DEBUG: User message: 'What are your customer support business hours?'
+🔍 RAG DEBUG: RAG mode - retrieving relevant context...
+🔍 RAG DEBUG: Starting context retrieval for query: 'What are your customer support business hours?'
+📋 RAG DEBUG: Chatbot ID: 5e69ab00-d866-46ab-b20b-fec3338a0895, Max contexts: 3, Threshold: 0.7
+🧠 RAG DEBUG: Generating query embedding...
+🧠 RAG DEBUG: Generating embedding for text (length: 46 chars)
+🔧 RAG DEBUG: Using model: all-MiniLM-L6-v2
+✂️ RAG DEBUG: Text prepared (cleaned length: 46 chars)
+✅ RAG DEBUG: Using actual model for embedding generation
+🎯 RAG DEBUG: Real embedding generated - dimension: 384
+📊 RAG DEBUG: Embedding vector preview: [-0.0676, -0.0025, ..., -0.0310]
+✅ RAG DEBUG: Query embedding generated (dimension: 384)
+🔎 RAG DEBUG: Performing similarity search in vector database...
+📊 RAG DEBUG: Similarity search returned 0 chunks
+⚠️ RAG DEBUG: No relevant context found for query in chatbot 5e69ab00-d866-46ab-b20b-fec3338a0895
+📚 RAG DEBUG: Retrieved 0 context chunks
+⚠️ RAG DEBUG: No relevant context found - falling back to standard response
+🔄 RAG DEBUG: No context available, generating standard response...
+✅ RAG DEBUG: Standard response generated (no context available)
+✅ Response generated successfully!
+📊 RAG enabled: False
+📊 Context count: 0
+📊 Model used: llama-3.1-8b-instant
+📄 Response preview: Our Walmart customer support team is available 24 hours a day, 7 days a week, to assist you with any questions or concerns you may have. You can reach us by phone, online chat, or through our mobile a... 
+
+⚡ Test 6: Performance Metrics
+------------------------------
+🔍 RAG DEBUG: Starting context retrieval for query: 'customer support hours'
+📋 RAG DEBUG: Chatbot ID: 5e69ab00-d866-46ab-b20b-fec3338a0895, Max contexts: 2, Threshold: 0.1
+🧠 RAG DEBUG: Generating query embedding...
+🧠 RAG DEBUG: Generating embedding for text (length: 22 chars)
+🔧 RAG DEBUG: Using model: all-MiniLM-L6-v2
+✂️ RAG DEBUG: Text prepared (cleaned length: 22 chars)
+✅ RAG DEBUG: Using actual model for embedding generation
+🎯 RAG DEBUG: Real embedding generated - dimension: 384
+📊 RAG DEBUG: Embedding vector preview: [-0.1350, 0.0177, ..., -0.0452]
+✅ RAG DEBUG: Query embedding generated (dimension: 384)
+🔎 RAG DEBUG: Performing similarity search in vector database...
+📊 RAG DEBUG: Similarity search returned 2 chunks
+📝 RAG DEBUG: Processing chunk 1: similarity=0.6848
+📄 RAG DEBUG: Chunk content preview: Customer Support Policy Manual
+1. Introduction
+Welcome to our customer support policy guide. This do...
+📝 RAG DEBUG: Processing chunk 2: similarity=0.3535
+📄 RAG DEBUG: Chunk content preview: Customer Support Policy Manual
+6. Escalation Matrix
+If your query is unresolved:
+1. Level 1: Support...
+🎯 RAG DEBUG: Context retrieval complete - 2 contexts retrieved
+📖 RAG DEBUG: Context 1 length: 997 chars
+📖 RAG DEBUG: Context 2 length: 365 chars
+🔍 RAG DEBUG: Starting context retrieval for query: 'escalation process'
+📋 RAG DEBUG: Chatbot ID: 5e69ab00-d866-46ab-b20b-fec3338a0895, Max contexts: 2, Threshold: 0.1
+🧠 RAG DEBUG: Generating query embedding...
+🧠 RAG DEBUG: Generating embedding for text (length: 18 chars)
+🔧 RAG DEBUG: Using model: all-MiniLM-L6-v2
+✂️ RAG DEBUG: Text prepared (cleaned length: 18 chars)
+✅ RAG DEBUG: Using actual model for embedding generation
+🎯 RAG DEBUG: Real embedding generated - dimension: 384
+📊 RAG DEBUG: Embedding vector preview: [-0.0304, 0.0176, ..., -0.0221]
+✅ RAG DEBUG: Query embedding generated (dimension: 384)
+🔎 RAG DEBUG: Performing similarity search in vector database...
+📊 RAG DEBUG: Similarity search returned 2 chunks
+📝 RAG DEBUG: Processing chunk 1: similarity=0.5182
+📄 RAG DEBUG: Chunk content preview: Customer Support Policy Manual
+6. Escalation Matrix
+If your query is unresolved:
+1. Level 1: Support...
+📝 RAG DEBUG: Processing chunk 2: similarity=0.2882
+📄 RAG DEBUG: Chunk content preview: Customer Support Policy Manual
+1. Introduction
+Welcome to our customer support policy guide. This do...
+🎯 RAG DEBUG: Context retrieval complete - 2 contexts retrieved
+📖 RAG DEBUG: Context 1 length: 365 chars
+📖 RAG DEBUG: Context 2 length: 997 chars
+🔍 RAG DEBUG: Starting context retrieval for query: 'policy manual'
+📋 RAG DEBUG: Chatbot ID: 5e69ab00-d866-46ab-b20b-fec3338a0895, Max contexts: 2, Threshold: 0.1
+🧠 RAG DEBUG: Generating query embedding...
+🧠 RAG DEBUG: Generating embedding for text (length: 13 chars)
+🔧 RAG DEBUG: Using model: all-MiniLM-L6-v2
+✂️ RAG DEBUG: Text prepared (cleaned length: 13 chars)
+✅ RAG DEBUG: Using actual model for embedding generation
+🎯 RAG DEBUG: Real embedding generated - dimension: 384
+📊 RAG DEBUG: Embedding vector preview: [-0.0572, 0.0336, ..., 0.0105]
+✅ RAG DEBUG: Query embedding generated (dimension: 384)
+🔎 RAG DEBUG: Performing similarity search in vector database...
+📊 RAG DEBUG: Similarity search returned 2 chunks
+📝 RAG DEBUG: Processing chunk 1: similarity=0.3758
+📄 RAG DEBUG: Chunk content preview: Customer Support Policy Manual
+1. Introduction
+Welcome to our customer support policy guide. This do...
+📝 RAG DEBUG: Processing chunk 2: similarity=0.3335
+📄 RAG DEBUG: Chunk content preview: Customer Support Policy Manual
+6. Escalation Matrix
+If your query is unresolved:
+1. Level 1: Support...
+🎯 RAG DEBUG: Context retrieval complete - 2 contexts retrieved
+📖 RAG DEBUG: Context 1 length: 997 chars
+📖 RAG DEBUG: Context 2 length: 365 chars
+🔍 RAG DEBUG: Starting context retrieval for query: 'contact information'
+📋 RAG DEBUG: Chatbot ID: 5e69ab00-d866-46ab-b20b-fec3338a0895, Max contexts: 2, Threshold: 0.1
+🧠 RAG DEBUG: Generating query embedding...
+🧠 RAG DEBUG: Generating embedding for text (length: 19 chars)
+🔧 RAG DEBUG: Using model: all-MiniLM-L6-v2
+✂️ RAG DEBUG: Text prepared (cleaned length: 19 chars)
+✅ RAG DEBUG: Using actual model for embedding generation
+🎯 RAG DEBUG: Real embedding generated - dimension: 384
+📊 RAG DEBUG: Embedding vector preview: [-0.0824, 0.0622, ..., -0.0076]
+✅ RAG DEBUG: Query embedding generated (dimension: 384)
+🔎 RAG DEBUG: Performing similarity search in vector database...
+📊 RAG DEBUG: Similarity search returned 2 chunks
+📝 RAG DEBUG: Processing chunk 1: similarity=0.3555
+📄 RAG DEBUG: Chunk content preview: Customer Support Policy Manual
+6. Escalation Matrix
+If your query is unresolved:
+1. Level 1: Support...
+📝 RAG DEBUG: Processing chunk 2: similarity=0.3098
+📄 RAG DEBUG: Chunk content preview: Customer Support Policy Manual
+1. Introduction
+Welcome to our customer support policy guide. This do...
+🎯 RAG DEBUG: Context retrieval complete - 2 contexts retrieved
+📖 RAG DEBUG: Context 1 length: 365 chars
+📖 RAG DEBUG: Context 2 length: 997 chars
+🔍 RAG DEBUG: Starting context retrieval for query: 'business hours Monday'
+📋 RAG DEBUG: Chatbot ID: 5e69ab00-d866-46ab-b20b-fec3338a0895, Max contexts: 2, Threshold: 0.1
+🧠 RAG DEBUG: Generating query embedding...
+🧠 RAG DEBUG: Generating embedding for text (length: 21 chars)
+🔧 RAG DEBUG: Using model: all-MiniLM-L6-v2
+✂️ RAG DEBUG: Text prepared (cleaned length: 21 chars)
+✅ RAG DEBUG: Using actual model for embedding generation
+🎯 RAG DEBUG: Real embedding generated - dimension: 384
+📊 RAG DEBUG: Embedding vector preview: [-0.0195, 0.0215, ..., -0.0300]
+✅ RAG DEBUG: Query embedding generated (dimension: 384)
+🔎 RAG DEBUG: Performing similarity search in vector database...
+📊 RAG DEBUG: Similarity search returned 1 chunks
+📝 RAG DEBUG: Processing chunk 1: similarity=0.3740
+📄 RAG DEBUG: Chunk content preview: Customer Support Policy Manual
+1. Introduction
+Welcome to our customer support policy guide. This do...
+🎯 RAG DEBUG: Context retrieval complete - 1 contexts retrieved
+📖 RAG DEBUG: Context 1 length: 997 chars
+📊 Performance Results:
+  • 'customer support hours': 2 contexts, 80.35ms, avg sim: 0.5191
+  • 'escalation process': 2 contexts, 80.93ms, avg sim: 0.4032
+  • 'policy manual': 2 contexts, 70.19ms, avg sim: 0.3547
+  • 'contact information': 2 contexts, 63.51ms, avg sim: 0.3327
+  • 'business hours Monday': 1 contexts, 97.68ms, avg sim: 0.374
+
+🎯 RAG System Assessment
+========================================
+📊 Knowledge Base Size: 2 embeddings
+⚡ Average Response Time: 78.53ms
+🎯 Query Success Rate: 5/5 (100.0%)
+🔧 Vector Search: ✅ Working (fallback mode)
+🧠 Embedding Generation: ✅ Working
+💬 Message Integration: ✅ Working
+
+💡 Recommendations
+------------------------------
+✅ RAG system is performing well
+💡 For optimal performance, set up PostgreSQL RPC functions
