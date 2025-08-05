@@ -3,15 +3,16 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { 
-  LayoutDashboard, 
-  MessageSquare, 
-  FileText, 
-  BarChart3, 
-  Settings, 
+import {
+  LayoutDashboard,
+  MessageSquare,
+  FileText,
+  BarChart3,
+  Settings,
   PlusCircle,
   Mic,
   Bot,
+  Code,
   Menu,
   X,
   ChevronDown,
@@ -35,6 +36,17 @@ const navigation = [
       { name: 'Create New', href: '/dashboard/chatbots/new' },
       { name: 'Voice Chatbots', href: '/dashboard/chatbots?type=voice' },
       { name: 'Text Chatbots', href: '/dashboard/chatbots?type=text' },
+    ],
+  },
+  {
+    name: 'Widgets',
+    href: '/dashboard/widgets',
+    icon: Code,
+    children: [
+      { name: 'All Widgets', href: '/dashboard/widgets' },
+      { name: 'New Configuration', href: '/dashboard/widgets/new' },
+      { name: 'Templates', href: '/dashboard/widgets/templates' },
+      { name: 'Analytics', href: '/dashboard/analytics' },
     ],
   },
   {
